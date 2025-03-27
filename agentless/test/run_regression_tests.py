@@ -4,6 +4,9 @@ import os
 
 import jsonlines
 from datasets import load_dataset
+
+from monkeypatched_swebench import swebench
+
 from swebench.harness.constants import (
     FAIL_TO_PASS,
     KEY_INSTANCE_ID,
@@ -31,11 +34,13 @@ def rewrite_report(instance_id, input_folder_path, regression_tests):
     return report["PASS_TO_PASS"]["failure"]
 
 
-def save_passing_tests(output_jsonl_path, input_folder_path, dataset):
+def save_passing_tests(output_jsonl_path, input_folder_path, dataset, instance_ids):
     ds = load_dataset(dataset)
 
     with jsonlines.open(output_jsonl_path, mode="w") as writer:
         for entry in ds["test"]:
+            if entry["instance_id"] not in instance_ids:
+                continue
             instance_id = entry["instance_id"]
 
             log_path = f"{input_folder_path}/test/{instance_id}/test_output.txt"
@@ -209,6 +214,7 @@ def _run_regression(args):
                 args.output_file,
                 os.path.join("logs", "run_evaluation", args.run_id),
                 args.dataset,
+                instance_ids,
             )
 
 

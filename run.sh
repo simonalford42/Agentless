@@ -1,5 +1,5 @@
 #%% Setup
-OUTPUT_DIR=ytdl
+OUTPUT_DIR=test
 TARGET_ID=ytdl-org__youtube-dl-32987
 DATASET=codearena_local
 
@@ -89,13 +89,14 @@ done
 #%% Generate regression tests
 python agentless/test/run_regression_tests.py --run_id generate_regression_tests \
                                             --output_file results/$OUTPUT_DIR/passing_tests.jsonl \
-                                            --target_id $TARGET_ID \
+                                            --instance_ids $TARGET_ID \
                                             --dataset $DATASET
 
 #%% Select regression tests
 python agentless/test/select_regression_tests.py --passing_tests results/$OUTPUT_DIR/passing_tests.jsonl \
-                                               --output_folder results/$OUTPUT_DIR/select_regression \
+                                                --output_folder results/$OUTPUT_DIR/select_regression \
                                                --target_id $TARGET_ID \
+                                               --instance_ids $TARGET_ID \
                                                --dataset $DATASET
 
 #%% Run regression tests on all patches
@@ -107,7 +108,7 @@ for i in {1..4}; do
                                                     --predictions_path="${folder}/output_${num}_processed.jsonl" \
                                                     --run_id="${run_id_prefix}_regression_${num}" \
                                                     --num_workers 10 \
-                                                    --target_id $TARGET_ID \
+                                                    --instance_ids $TARGET_ID \
                                                     --dataset $DATASET
     done
 done
@@ -129,7 +130,7 @@ for st in {0..36..4}; do
                                                       --test_jsonl="results/$OUTPUT_DIR/reproduction_test_samples/output_${num}_processed_reproduction_test.jsonl" \
                                                       --num_workers 6 \
                                                       --testing \
-                                                      --target_id $TARGET_ID \
+                                                      --instance_ids $TARGET_ID \
                                                       --dataset $DATASET
     done
 done
@@ -151,7 +152,7 @@ for i in {1..4}; do
                                                       --predictions_path="${folder}/output_${num}_processed.jsonl" \
                                                       --run_id="${run_id_prefix}_reproduction_${num}" \
                                                       --num_workers 10 \
-                                                      --target_id $TARGET_ID \
+                                                      --instance_ids $TARGET_ID \
                                                       --dataset $DATASET
     done
 done
@@ -162,14 +163,4 @@ python agentless/repair/rerank.py --patch_folder results/$OUTPUT_DIR/repair_samp
                                 --deduplicate \
                                 --regression \
                                 --reproduction \
-                                --target_id $TARGET_ID \
-                                --dataset $DATASET
-UTPUT_DIR=test
-TARGET_ID=django__django-10914
-DATASET=princeton-nlp/SWE-bench_Lite
-
-#%% File-level localization
-python agentless/fl/localize.py --file_level \
-                                --output_folder results/$OUTPUT_DIR/file_level \
-                                --num_threads 10 \
-                                --skip_existing \
+                                --target $TARGET_ID

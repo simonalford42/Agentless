@@ -2,6 +2,7 @@ import argparse
 import json
 import os
 
+from monkeypatched_swebench import swebench
 from datasets import load_dataset
 
 from agentless.test.run_tests import run_reproduction_tests, txt_file_contains_string
@@ -35,7 +36,10 @@ def _run_reproduction_tests(args):
         # for reproduction test selection
         # run on original repo to select tests which can reproduce the issue
         ds = load_dataset(args.dataset)
-        instance_ids = ds["test"]["instance_id"]
+        if args.instance_ids:
+            instance_ids = args.instance_ids
+        else:
+            instance_ids = ds["test"]["instance_id"]
         patches = [
             {"instance_id": instance_id, "patch": "", "normalized_patch": ""}
             for instance_id in instance_ids

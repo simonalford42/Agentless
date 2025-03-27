@@ -1,7 +1,7 @@
 import datasets
 import json
 
-with open('../data/codearena_instances.json', 'r') as f:
+with open('../data/codearena_instances4.json', 'r') as f:
     data = json.load(f)
 
 class LocalData(datasets.GeneratorBasedBuilder):
@@ -19,7 +19,7 @@ class LocalData(datasets.GeneratorBasedBuilder):
                 "problem_statement": datasets.Value("string"),
                 "hints_text": datasets.Value("string"),
                 "created_at": datasets.Value("string"),
-                "version": datasets.Value("float32"),
+                "version": datasets.Value("string"),
                 "FAIL_TO_PASS": datasets.Value("string"),
                 "PASS_TO_PASS": datasets.Value("string"),
                 "environment_setup_commit": datasets.Value("string"),
