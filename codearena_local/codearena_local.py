@@ -1,7 +1,7 @@
 import datasets
 import json
 
-with open('../data/codearena_instances4.json', 'r') as f:
+with open('../../data/codearena_instances.json', 'r') as f:
     data = json.load(f)
 
 class LocalData(datasets.GeneratorBasedBuilder):

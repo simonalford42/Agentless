@@ -445,6 +445,7 @@ def test_selection(args):
         ]
 
         if not patch_ids:
+            print('No valid patches found for instance:', instance_id)
             continue
 
         vote = Counter()
@@ -478,8 +479,6 @@ def test_selection(args):
 
         with open(f"{args.output_folder}/{args.output_file}", "a") as f:
             f.write(json.dumps(result) + "\n")
-
-    print(total_count)
 
 
 def main():
@@ -557,3 +556,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
