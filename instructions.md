@@ -1,4 +1,4 @@
-# Instructions
+# Setup
 1. Clone repo (into `codearena/baselines/`), create environment:
 
 ```bash
@@ -9,11 +9,15 @@ conda activate agentless
 pip install -r requirements.txt
 ```
 
-2. Make sure openai api key and docker envs are setup.
-3. Set up target id, samples, output dir.
-4. `bash run_agentless.sh` will run the method via a sequence of python commands for the different steps. See https://github.com/simonalford42/Agentless/blob/main/README_swebench.md for full instructions.
+2. Make sure you have an OpenAI API key set to the OPENAI_API_KEY environment variable and that Docker is working.
 
+# Running Agentless
+1. At the beginning of `run_agentless.sh`, set up the `TARGET_ID`, `SAMPLES`, `OUTPUT_DIR` variables.
+2. `bash run_agentless.sh` will run the method via a sequence of python commands for the different steps. The script was derived from the instructions and commands at https://github.com/simonalford42/Agentless/blob/main/README_swebench.md, see that page for full explanation and instructions.
     Note: It will ask you to trust custom code. This is to load the codearena instances into a local huggingface dataset (`codearena_local.py`) to interface with Agentless.
+3. `python clean_sweagent_outputs.py /baselines/Agentless/results/$OUTPUT_DIR/all_preds.jsonl`
+4. `python codearena.py --BugFixing --predictions_path baselines/Agentless/results/$OUTPUT_DIR/all_preds.jsonl --instance_ids $TARGET_ID --run_id test`
+
 
 
 Notes:
