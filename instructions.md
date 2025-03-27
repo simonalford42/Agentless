@@ -2,7 +2,7 @@
 1. Clone repo (into `codearena/baselines/`), create environment:
 
 ```bash
-git clone https://github.com/simonalford42/Agentless/tree/main.git
+git clone https://github.com/simonalford42/Agentless.git
 cd Agentless
 conda create -n agentless python=3.11
 conda activate agentless
