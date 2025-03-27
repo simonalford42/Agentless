@@ -1,5 +1,5 @@
 #%% Setup
-TARGET_ID=ytdl-org__youtube-dl-31235
+TARGET_ID=ytdl-org__youtube-dl-31182
 SAMPLES=1
 OUTPUT_DIR="${TARGET_ID}_n${SAMPLES}"
 MODEL="gpt-4o-mini-2024-07-18"
@@ -154,5 +154,5 @@ python agentless/repair/rerank.py --patch_folder results/$OUTPUT_DIR/repair_samp
                                 --deduplicate \
                                 --regression \
                                 --target $TARGET_ID \
-                                --output_file results/$OUTPUT_DIR/all_preds.jsonl \
+                                --output_file results/$OUTPUT_DIR/all_preds.jsonl
 echo "Finished everything!"

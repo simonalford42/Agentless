@@ -18,4 +18,4 @@ pip install -r requirements.txt
 
 Notes:
 - I removed the reproduction tests so that it doesn't reject patches. Without doing this, the agent would usually not be able to come up with anything, or (once) what it came up with solved the issue, which isn't what we want.
-- This uses OpenAI credits, but if you use 4o mini and 1 sample it isn't very expensive. For me it takes ~10 minutes and 10 cents per task.
+- This uses OpenAI credits, but if you use 4o mini and 1 sample it isn't very expensive. For me it takes ~5-10 minutes and 10 cents per task. You can track usage at https://platform.openai.com/settings/organization/usage.
