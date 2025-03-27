@@ -21,6 +21,7 @@ repo_to_top_folder = {
     "psf/requests": "requests",
     "pylint-dev/pylint": "pylint",
     "pallets/flask": "flask",
+    "ytdl-org/youtube-dl": "youtube-dl",
 }
 
 

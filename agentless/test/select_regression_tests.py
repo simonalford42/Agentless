@@ -196,7 +196,7 @@ def main():
         "--dataset",
         type=str,
         default="princeton-nlp/SWE-bench_Lite",
-        choices=["princeton-nlp/SWE-bench_Lite", "princeton-nlp/SWE-bench_Verified"],
+        help="Dataset for evaluation",
     )
     parser.add_argument(
         "--instance_ids",
