@@ -1,7 +1,12 @@
 #%% Setup
-TARGET_ID=$1
-SAMPLES=10
-OUTPUT_DIR=${TARGET_ID}_n${SAMPLES}
+INSTANCE_ID=$1
+# if second arg passed, set it to SAMPLES, otherwise use 1 sample
+if [ -z "$2" ]; then
+    SAMPLES=1
+else
+    SAMPLES=$2
+fi
+OUTPUT_DIR=${INSTANCE_ID}_n${SAMPLES}
 # MODEL="gpt-4o-mini-2024-07-18"
 MODEL='gpt-4.1-nano'
 
@@ -26,7 +31,7 @@ python agentless/fl/localize.py --file_level \
                                 --output_folder results/$OUTPUT_DIR/file_level \
                                 --num_threads 10 \
                                 --skip_existing \
-                                --target_id $TARGET_ID \
+                                --target_id $INSTANCE_ID \
                                 --model $MODEL \
                                 --dataset codearena_local
 echo "Finished running file-level localization"
@@ -37,7 +42,7 @@ python agentless/fl/localize.py --file_level \
                                 --output_folder results/$OUTPUT_DIR/file_level_irrelevant \
                                 --num_threads 10 \
                                 --skip_existing \
-                                --target_id $TARGET_ID \
+                                --target_id $INSTANCE_ID \
                                 --model $MODEL \
                                 --dataset codearena_local
 echo "Finished running irrelevant file filtering"
@@ -49,7 +54,7 @@ python agentless/fl/retrieve.py --index_type simple \
                                 --output_folder results/$OUTPUT_DIR/retrievel_embedding \
                                 --persist_dir embedding/swe-bench_simple \
                                 --num_threads 10 \
-                                --target_id $TARGET_ID \
+                                --target_id $INSTANCE_ID \
                                 --dataset codearena_local
 echo "Finished running retrieval-based localization"
 
@@ -69,7 +74,7 @@ python agentless/fl/localize.py --related_level \
                                 --start_file results/$OUTPUT_DIR/file_level_combined/combined_locs.jsonl \
                                 --num_threads 10 \
                                 --skip_existing \
-                                --target_id $TARGET_ID \
+                                --target_id $INSTANCE_ID \
                                 --model $MODEL \
                                 --dataset codearena_local
 echo "Finished running related elements localization"
@@ -84,7 +89,7 @@ python agentless/fl/localize.py --fine_grain_line_level \
                                 --start_file results/$OUTPUT_DIR/related_elements/loc_outputs.jsonl \
                                 --num_threads 10 \
                                 --skip_existing \
-                                --target_id $TARGET_ID \
+                                --target_id $INSTANCE_ID \
                                 --model $MODEL \
                                 --dataset codearena_local
 echo "Finished running fine-grained line-level localization"
@@ -95,7 +100,7 @@ python agentless/fl/localize.py --merge \
                                 --top_n 3 \
                                 --num_samples 4 \
                                 --start_file results/$OUTPUT_DIR/edit_location_samples/loc_outputs.jsonl \
-                                --target_id $TARGET_ID \
+                                --target_id $INSTANCE_ID \
                                 --model $MODEL \
                                 --dataset codearena_local
 echo "Finished running edit locations merge"
@@ -112,7 +117,7 @@ for i in {0..3}; do
                                     --diff_format \
                                     --gen_and_process \
                                     --num_threads 2 \
-                                    --target_id $TARGET_ID \
+                                    --target_id $INSTANCE_ID \
                                     --model $MODEL \
                                     --dataset codearena_local
 done
@@ -124,10 +129,10 @@ for i in {1..4}; do
     folder=baselines/Agentless/results/$OUTPUT_DIR/repair_sample_$i
     for ((num=0; num<$SAMPLES; num++)); do
         python codearena.py --BugFixing --predictions_path="${folder}/output_${num}_processed.jsonl" \
-                            --instance_ids $TARGET_ID \
+                            --instance_ids $INSTANCE_ID \
                             --run_id="check_bad_patch_${OUTPUT_DIR}_${i}_${num}"
     done
 done
 
-#%% If patch is bad, add it to codearena_instances.json. returns 0 a patch is bad and added, or 1 otherwise.
-# python bad_patch_validation.py --predictions_path baselines/Agentless/results/$OUTPUT_DIR/all_preds.jsonl --instance_id $TARGET_ID --run_id check_bad_patch
+#%% If any of the generated patches are bad, add it to codearena_instances.json. Returns 0 a patch is bad and added, or 1 otherwise.
+python bad_patch_validation.py --results_folder_prefix "check_bad_patch_${OUTPUT_DIR}" --instance_id $INSTANCE_ID
