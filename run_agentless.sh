@@ -133,6 +133,8 @@ for i in {1..4}; do
                             --run_id="check_bad_patch_${OUTPUT_DIR}_${i}_${num}"
     done
 done
+cd baselines/Agentless
 
 #%% If any of the generated patches are bad, add it to codearena_instances.json. Returns 0 a patch is bad and added, or 1 otherwise.
+cd ../../
 python bad_patch_validation.py --results_folder_prefix "check_bad_patch_${OUTPUT_DIR}" --instance_id $INSTANCE_ID

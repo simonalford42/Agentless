@@ -8,21 +8,14 @@ import uuid
 import pandas as pd
 from tqdm import tqdm
 
-repo_to_top_folder = {
-    "django/django": "django",
-    "sphinx-doc/sphinx": "sphinx",
-    "scikit-learn/scikit-learn": "scikit-learn",
-    "sympy/sympy": "sympy",
-    "pytest-dev/pytest": "pytest",
-    "matplotlib/matplotlib": "matplotlib",
-    "astropy/astropy": "astropy",
-    "pydata/xarray": "xarray",
-    "mwaskom/seaborn": "seaborn",
-    "psf/requests": "requests",
-    "pylint-dev/pylint": "pylint",
-    "pallets/flask": "flask",
-    "ytdl-org/youtube-dl": "youtube-dl",
-}
+
+def get_repo_folder(repo_name):
+    """Extract the repository folder name from the full repository path.
+
+    :param repo_name: The full repository path (e.g. 'django/django')
+    :return: The repository folder name (e.g. 'django')
+    """
+    return repo_name.split('/')[-1]
 
 
 def checkout_commit(repo_path, commit_id):
@@ -43,17 +36,17 @@ def checkout_commit(repo_path, commit_id):
 
 
 def clone_repo(repo_name, repo_playground):
+    repo_folder = get_repo_folder(repo_name)
     try:
-
         print(
-            f"Cloning repository from https://github.com/{repo_name}.git to {repo_playground}/{repo_to_top_folder[repo_name]}..."
+            f"Cloning repository from https://github.com/{repo_name}.git to {repo_playground}/{repo_folder}..."
         )
         subprocess.run(
             [
                 "git",
                 "clone",
                 f"https://github.com/{repo_name}.git",
-                f"{repo_playground}/{repo_to_top_folder[repo_name]}",
+                f"{repo_playground}/{repo_folder}",
             ],
             check=True,
         )
@@ -78,11 +71,11 @@ def get_project_structure_from_scratch(
     os.makedirs(repo_playground)
 
     clone_repo(repo_name, repo_playground)
-    checkout_commit(f"{repo_playground}/{repo_to_top_folder[repo_name]}", commit_id)
-    structure = create_structure(f"{repo_playground}/{repo_to_top_folder[repo_name]}")
+    checkout_commit(f"{repo_playground}/{get_repo_folder(repo_name)}", commit_id)
+    structure = create_structure(f"{repo_playground}/{get_repo_folder(repo_name)}")
     # clean up
     subprocess.run(
-        ["rm", "-rf", f"{repo_playground}/{repo_to_top_folder[repo_name]}"], check=True
+        ["rm", "-rf", f"{repo_playground}/{get_repo_folder(repo_name)}"], check=True
     )
     d = {
         "repo": repo_name,
@@ -192,3 +185,43 @@ def create_structure(directory_path):
                 curr_struct[file_name] = {}
 
     return structure
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--datapath", help="Path to the data file", default="./instances.csv"
+    )
+    parser.add_argument("--repo_playground", help="Path to the repo playground", required=True)
+    parser.add_argument("--output_path", help="Output file path", required=True)
+    args = parser.parse_args()
+
+    repo_playground = args.repo_playground
+
+    df = pd.read_csv(args.datapath)
+    repos = df["repo"].unique()
+    print(f"Found {len(repos)} repos: {repos}")
+
+    all_structures = []
+    index = 0
+
+    for _, row in tqdm(df.iterrows(), total=len(df)):
+        repo = row["repo"]
+        repo_commit = row["base_commit"]
+        instance_id = row["instance_id"]
+        try:
+            print(f"Processing {repo} at commit {repo_commit} for instance {instance_id}")
+            # get the repo structure from scratch
+            d = get_project_structure_from_scratch(
+                repo, repo_commit, instance_id, repo_playground
+            )
+            all_structures.append(d)
+        except Exception as e:
+            print(f"Failed to process {repo} at commit {repo_commit} with error: {e}")
+
+    with open(args.output_path, "w") as f:
+        json.dump(all_structures, f, indent=2)
+
+
+if __name__ == "__main__":
+    main()
