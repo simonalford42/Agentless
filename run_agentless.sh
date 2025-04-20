@@ -27,43 +27,52 @@ if [ -z "$OPENAI_API_KEY" ]; then
 fi
 
 #%% File-level localization
-python agentless/fl/localize.py --file_level \
-                                --output_folder results/$OUTPUT_DIR/file_level \
-                                --num_threads 10 \
-                                --skip_existing \
-                                --target_id $INSTANCE_ID \
-                                --model $MODEL \
-                                --dataset codearena_local
-echo "Finished running file-level localization"
+# python agentless/fl/localize.py --file_level \
+#                                 --output_folder results/$OUTPUT_DIR/file_level \
+#                                 --num_threads 10 \
+#                                 --skip_existing \
+#                                 --target_id $INSTANCE_ID \
+#                                 --model $MODEL \
+#                                 --dataset codearena_local
+# echo "Finished running file-level localization"
 
 #%% Irrelevant file filtering
-python agentless/fl/localize.py --file_level \
-                                --irrelevant \
-                                --output_folder results/$OUTPUT_DIR/file_level_irrelevant \
-                                --num_threads 10 \
-                                --skip_existing \
-                                --target_id $INSTANCE_ID \
-                                --model $MODEL \
-                                --dataset codearena_local
-echo "Finished running irrelevant file filtering"
+# python agentless/fl/localize.py --file_level \
+#                                 --irrelevant \
+#                                 --output_folder results/$OUTPUT_DIR/file_level_irrelevant \
+#                                 --num_threads 10 \
+#                                 --skip_existing \
+#                                 --target_id $INSTANCE_ID \
+#                                 --model $MODEL \
+#                                 --dataset codearena_local
+# echo "Finished running irrelevant file filtering"
 
 #%% Retrieval-based localization
-python agentless/fl/retrieve.py --index_type simple \
-                                --filter_type given_files \
-                                --filter_file results/$OUTPUT_DIR/file_level_irrelevant/loc_outputs.jsonl \
-                                --output_folder results/$OUTPUT_DIR/retrievel_embedding \
-                                --persist_dir embedding/swe-bench_simple \
-                                --num_threads 10 \
-                                --target_id $INSTANCE_ID \
-                                --dataset codearena_local
-echo "Finished running retrieval-based localization"
+# python agentless/fl/retrieve.py --index_type simple \
+#                                 --filter_type given_files \
+#                                 --filter_file results/$OUTPUT_DIR/file_level_irrelevant/loc_outputs.jsonl \
+#                                 --output_folder results/$OUTPUT_DIR/retrievel_embedding \
+#                                 --persist_dir embedding/swe-bench_simple \
+#                                 --num_threads 10 \
+#                                 --target_id $INSTANCE_ID \
+#                                 --dataset codearena_local
+# echo "Finished running retrieval-based localization"
 
 #%% Combine retrieval and model results
-python agentless/fl/combine.py  --retrieval_loc_file results/$OUTPUT_DIR/retrievel_embedding/retrieve_locs.jsonl \
-                                --model_loc_file results/$OUTPUT_DIR/file_level/loc_outputs.jsonl \
-                                --top_n 3 \
-                                --output_folder results/$OUTPUT_DIR/file_level_combined
-echo "Finished running retrieval and model results combination"
+# python agentless/fl/combine.py  --retrieval_loc_file results/$OUTPUT_DIR/retrievel_embedding/retrieve_locs.jsonl \
+#                                 --model_loc_file results/$OUTPUT_DIR/file_level/loc_outputs.jsonl \
+#                                 --top_n 3 \
+#                                 --output_folder results/$OUTPUT_DIR/file_level_combined
+# echo "Finished running retrieval and model results combination"
+
+
+#%% Localization via gold patch
+python agentless/fl/gold_localize.py --target_id $INSTANCE_ID \
+                                     --output_folder results/$OUTPUT_DIR/file_level_combined \
+                                     --output_file combined_locs.jsonl \
+                                     --dataset codearena_local
+
+# echo "Finished acquiring gold patch file level localization"
 
 #%% Related elements localization
 python agentless/fl/localize.py --related_level \
@@ -78,6 +87,7 @@ python agentless/fl/localize.py --related_level \
                                 --model $MODEL \
                                 --dataset codearena_local
 echo "Finished running related elements localization"
+#
 
 #%% Fine-grained line-level localization
 python agentless/fl/localize.py --fine_grain_line_level \
@@ -105,8 +115,16 @@ python agentless/fl/localize.py --merge \
                                 --dataset codearena_local
 echo "Finished running edit locations merge"
 
-#%% Repair for each set of edit locations
-for i in {0..3}; do
+# #%% Localization via gold patch
+# python agentless/fl/gold_localize.py --target_id $INSTANCE_ID \
+#                                      --output_folder results/$OUTPUT_DIR/edit_location_invidual \
+#                                      --include_locs \
+#                                      --dataset codearena_local
+
+# echo "Finished acquiring gold patch file level localization"
+
+# #%% Repair for each set of edit locations
+for i in {0..1}; do
     python agentless/repair/repair.py --loc_file results/$OUTPUT_DIR/edit_location_individual/loc_merged_${i}-${i}_outputs.jsonl \
                                     --output_folder results/$OUTPUT_DIR/repair_sample_$((i+1)) \
                                     --loc_interval \
@@ -121,20 +139,20 @@ for i in {0..3}; do
                                     --model $MODEL \
                                     --dataset codearena_local
 done
-echo "Finished running repair for all edit locations"
+# echo "Finished running repair for all edit locations"
 
-#%% Check each of the generated patches to see if any are bad
-cd ../../
-for i in {1..4}; do
-    folder=baselines/Agentless/results/$OUTPUT_DIR/repair_sample_$i
-    for ((num=0; num<$SAMPLES; num++)); do
-        python codearena.py --BugFixing --predictions_path="${folder}/output_${num}_processed.jsonl" \
-                            --instance_ids $INSTANCE_ID \
-                            --run_id="check_bad_patch_${OUTPUT_DIR}_${i}_${num}"
-    done
-done
-cd baselines/Agentless
+# #%% Check each of the generated patches to see if any are bad
+# cd ../../
+# for i in {1..4}; do
+#     folder=baselines/Agentless/results/$OUTPUT_DIR/repair_sample_$i
+#     for ((num=0; num<$SAMPLES; num++)); do
+#         python codearena.py --BugFixing --predictions_path="${folder}/output_${num}_processed.jsonl" \
+#                             --instance_ids $INSTANCE_ID \
+#                             --run_id="check_bad_patch_${OUTPUT_DIR}_${i}_${num}"
+#     done
+# done
+# cd baselines/Agentless
 
-#%% If any of the generated patches are bad, add it to codearena_instances.json. Returns 0 a patch is bad and added, or 1 otherwise.
-cd ../../
-python bad_patch_validation.py --results_folder_prefix "check_bad_patch_${OUTPUT_DIR}" --instance_id $INSTANCE_ID
+# #%% If any of the generated patches are bad, add it to codearena_instances.json. Returns 0 a patch is bad and added, or 1 otherwise.
+# cd ../../
+# python bad_patch_validation.py --results_folder_prefix "check_bad_patch_${OUTPUT_DIR}" --instance_id $INSTANCE_ID
