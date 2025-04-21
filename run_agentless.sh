@@ -124,7 +124,7 @@ echo "Finished running edit locations merge"
 # echo "Finished acquiring gold patch file level localization"
 
 # #%% Repair for each set of edit locations
-for i in {0..1}; do
+for i in {0..3}; do
     python agentless/repair/repair.py --loc_file results/$OUTPUT_DIR/edit_location_individual/loc_merged_${i}-${i}_outputs.jsonl \
                                     --output_folder results/$OUTPUT_DIR/repair_sample_$((i+1)) \
                                     --loc_interval \
@@ -139,20 +139,20 @@ for i in {0..1}; do
                                     --model $MODEL \
                                     --dataset codearena_local
 done
-# echo "Finished running repair for all edit locations"
+echo "Finished running repair for all edit locations"
 
-# #%% Check each of the generated patches to see if any are bad
-# cd ../../
-# for i in {1..4}; do
-#     folder=baselines/Agentless/results/$OUTPUT_DIR/repair_sample_$i
-#     for ((num=0; num<$SAMPLES; num++)); do
-#         python codearena.py --BugFixing --predictions_path="${folder}/output_${num}_processed.jsonl" \
-#                             --instance_ids $INSTANCE_ID \
-#                             --run_id="check_bad_patch_${OUTPUT_DIR}_${i}_${num}"
-#     done
-# done
-# cd baselines/Agentless
+#%% Check each of the generated patches to see if any are bad
+cd ../../
+for i in {1..4}; do
+    folder=baselines/Agentless/results/$OUTPUT_DIR/repair_sample_$i
+    for ((num=0; num<$SAMPLES; num++)); do
+        python codearena.py --BugFixing --predictions_path="${folder}/output_${num}_processed.jsonl" \
+                            --instance_ids $INSTANCE_ID \
+                            --run_id="check_bad_patch_${OUTPUT_DIR}_${i}_${num}"
+    done
+done
+cd baselines/Agentless
 
-# #%% If any of the generated patches are bad, add it to codearena_instances.json. Returns 0 a patch is bad and added, or 1 otherwise.
-# cd ../../
-# python bad_patch_validation.py --results_folder_prefix "check_bad_patch_${OUTPUT_DIR}" --instance_id $INSTANCE_ID
+#%% If any of the generated patches are bad, add it to codearena_instances.json. Returns 0 a patch is bad and added, or 1 otherwise.
+cd ../../
+python bad_patch_validation.py --results_folder_prefix "check_bad_patch_${OUTPUT_DIR}" --instance_id $INSTANCE_ID
