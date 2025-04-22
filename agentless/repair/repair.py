@@ -243,7 +243,11 @@ def construct_topn_file_context(
     topn_content = ""
 
     for pred_file, locs in file_to_locs.items():
-        content = file_contents[pred_file]
+        try:
+            content = file_contents[pred_file]
+        except KeyError:
+            # maybe the gold patch created a new file that didn't exist
+            continue
         line_locs, context_intervals = transfer_arb_locs_to_locs(
             locs,
             structure,
@@ -339,7 +343,7 @@ def process_loc(loc, args, swe_bench_data, prev_o, write_lock=None):
                 file_contents[pred_file] = content
                 break
 
-        assert content is not None, f"{pred_file} file not found"
+        # assert content is not None, f"{pred_file} file not found"
     # Construct top-n file context
     file_to_edit_locs = dict()
 
@@ -692,6 +696,8 @@ def post_process_repair(args):
             except Exception as e:
                 logger.info(e)
                 print(e)
+                import traceback
+                traceback.print_exc()
                 raw_output_text = ""
 
         if raw_output_text:

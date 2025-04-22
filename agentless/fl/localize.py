@@ -64,7 +64,7 @@ def localize_irrelevant_instance(
             structure,
             problem_statement,
             args.model,
-            args.backend,
+            args.backend
             logger,
         )
         found_files, additional_artifact_loc_file, file_traj = fl.localize_irrelevant(
