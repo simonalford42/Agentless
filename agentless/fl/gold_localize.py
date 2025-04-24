@@ -6,8 +6,9 @@ import re
 from collections import defaultdict
 from typing import Dict, List
 
-_HUNK_RE = re.compile(
-    r'^@@\s*-(\d+)(?:,\d+)?\s+\+(\d+)(?:,\d+)?\s*@@\s*(.*)$')
+_HUNK_RE = re.compile(r'^@@\s*-(\d+)(?:,\d+)?\s+\+(\d+)(?:,\d+)?\s*@@\s*(.*)$')
+_HUNK_RE_2 = re.compile(r'^@@\s*-\d+(?:,\d+)?\s+\+(\d+)(?:,(\d+))?\s*@@')
+
 _DEF_RE = re.compile(r'\bdef\s+([A-Za-z_]\w*)\s*\(')
 
 
@@ -20,6 +21,7 @@ def _extract_func_name(context: str) -> str:
         return m.group(1)
     #  fallbacks: header might just contain the symbol
     return context.strip().split()[0] or "unknown"
+
 
 def files_and_funcs_from_patch(diff_text: str) -> Dict[str, List[str]]:
     """
@@ -58,12 +60,44 @@ def files_and_funcs_from_patch(diff_text: str) -> Dict[str, List[str]]:
     return out
 
 
+def get_edit_locs(patch_text: str, include_fn_name: bool = False, one_file: bool = False) -> Dict[str, List[str]]:
+    if include_fn_name:
+        return files_and_funcs_from_patch(patch_text)
+
+    out: Dict[str, List[str]] = defaultdict(list)
+    current_file = None
+    for line in patch_text.splitlines():
+        if line.startswith("diff --git"):
+            parts = line.split()
+            if len(parts) >= 4:
+                current_file = parts[3][2:]  # strip "b/"
+            continue
+        if current_file is None or not line.startswith("@@"):
+            continue
+        m = _HUNK_RE_2.match(line)
+        if not m:
+            continue
+        start = int(m.group(1))
+        count = int(m.group(2)) if m.group(2) else 1
+        end = start + count - 1
+        entry = f"\nline: {start}\nline: {end}"
+        if entry not in out[current_file]:
+            out[current_file].append(entry)
+
+    if one_file:
+        # just the first file and its locs
+        k = list(out.keys())[0]
+        return {k: out[k]}
+
+    return dict(out)
+
+
 def gold_localize(args):
     swe_bench_data = load_dataset(args.dataset, split="test")
     task = [x for x in swe_bench_data if x["instance_id"] == args.target_id][0]
-    patch_text    = task["patch"]
+    patch_text = task["patch"]
     changed_files = get_changed_files(patch_text)
-    found_edit_locs  = files_and_funcs_from_patch(patch_text) if args.include_locs else {}
+    found_edit_locs = get_edit_locs(patch_text, include_fn_name=args.include_fn_name)
 
     output = {
         "instance_id": args.target_id,
@@ -94,13 +128,8 @@ def main():
 
     parser.add_argument("--output_folder", type=str, required=True)
     parser.add_argument("--output_file", type=str, default="loc_outputs.jsonl")
+    parser.add_argument("--include_fn_name", action="store_true", default=False)
     parser.add_argument("--target_id", type=str)
-    parser.add_argument(
-        "--include_locs",
-        action="store_true",
-        help="Include function names extracted from the diff "
-             "into `found_related_locs`.",
-    )
     parser.add_argument(
         "--dataset",
         type=str,

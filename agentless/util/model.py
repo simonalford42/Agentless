@@ -1,6 +1,8 @@
 import json
 from abc import ABC, abstractmethod
 from typing import List
+import os
+import google.generativeai as genai
 
 from agentless.util.api_requests import (
     create_anthropic_config,
@@ -383,6 +385,44 @@ class DeepSeekChatDecoder(DecoderBase):
     def is_direct_completion(self) -> bool:
         return False
 
+# -----------------------------------------------------------------------------
+# Google Gemini
+# -----------------------------------------------------------------------------
+class GoogleChatDecoder(DecoderBase):
+    def __init__(self, name: str, logger, **kwargs) -> None:
+        super().__init__(name, logger, **kwargs)
+        genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+
+    def codegen(
+        self, message: str, num_samples: int = 1, prompt_cache: bool = False
+    ) -> List[dict]:
+        if self.temperature == 0:
+            assert num_samples == 1
+
+        trajs = []
+        model = genai.GenerativeModel('models/' + self.name)
+        for _ in range(num_samples):
+            response = model.generate_content(
+                message,
+                generation_config={
+                    "max_output_tokens": self.max_new_tokens,
+                    "temperature": self.temperature,
+                },
+            )
+            trajs.append(
+                {
+                    "response": response.text,
+                    "usage": {  # Gemini doesn’t expose usage yet
+                        "completion_tokens": 0,
+                        "prompt_tokens": 0,
+                    },
+                }
+            )
+        return trajs
+
+    def is_direct_completion(self) -> bool:
+        return False
+
 
 def make_model(
     model: str,
@@ -410,6 +450,14 @@ def make_model(
         )
     elif backend == "deepseek":
         return DeepSeekChatDecoder(
+            name=model,
+            logger=logger,
+            batch_size=batch_size,
+            max_new_tokens=max_tokens,
+            temperature=temperature,
+        )
+    elif backend == "google":
+        return GoogleChatDecoder(
             name=model,
             logger=logger,
             batch_size=batch_size,

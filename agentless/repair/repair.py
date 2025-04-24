@@ -205,7 +205,10 @@ def _post_process_multifile_repair(
         if edited_file == "" or new_content == "":
             continue
         edited_files.append(edited_file)
+        logger.info(f"edited_file: {edited_file}")
         new_contents.append(new_content)
+        logger.info(f"content:\n{content}")
+        logger.info(f"new_content:\n{new_content}")
         diff = list(
             unified_diff(
                 content.split("\n"),
@@ -764,7 +767,7 @@ def main():
         "--backend",
         type=str,
         default="openai",
-        choices=["openai", "deepseek", "anthropic"],
+        choices=["openai", "deepseek", "anthropic", "google"],
     )
     parser.add_argument("--output_folder", type=str, required=True)
     parser.add_argument("--post_process", action="store_true")
