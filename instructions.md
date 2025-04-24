@@ -9,15 +9,11 @@ conda activate agentless
 pip install -r requirements.txt
 ```
 
-2. Make sure you have an OpenAI API key set to the `OPENAI_API_KEY` environment variable and that Docker is working.
+2. Make sure you have an LLM API key set and that Docker is working
 
 # Running Agentless
-1. At the beginning of `run_agentless.sh`, set the `TARGET_ID` variable.
-2. `bash run_agentless.sh` will run the method via a sequence of python commands for the different steps. The script was derived from the instructions and commands at https://github.com/simonalford42/Agentless/blob/main/README_swebench.md, see that page for full explanation and instructions.
-    Note: It will ask you to trust custom code. This is to load the codearena instances into a local huggingface dataset (`codearena_local.py`) to interface with Agentless.
-3. `python clean_sweagent_outputs.py /baselines/Agentless/results/$OUTPUT_DIR/all_preds.jsonl`
-4. `python codearena.py --BugFixing --predictions_path baselines/Agentless/results/$OUTPUT_DIR/all_preds.jsonl --instance_ids $TARGET_ID --run_id test`
+`full_bad_patch_gen.sh` runs the agentless bad patch generation. It uses 3 different file localization methods, and stops once a bad patch is successfully created
+`bad_patch_gen.sh` runs the agentless bad patch generation for a specific file localization method.
 
-Notes:
-- I removed the reproduction tests so that it is always able to come up with a patch. Without doing this, the agent would usually not be able to come up with anything that passes the reproduction stage.
-- This uses OpenAI credits, but if you use 4o mini and 1 sample it isn't very expensive. For me it takes ~5-10 minutes and 10 cents to get one sample for a task. You can track usage at https://platform.openai.com/settings/organization/usage.
+The scripts were derived from the instructions and commands at https://github.com/simonalford42/Agentless/blob/main/README_swebench.md. See that page for full explanation and instructions.
+Note: It will ask you to trust custom code. This is to load the codearena instances into a local huggingface dataset (`codearena_local.py`) to interface with Agentless.

@@ -30,12 +30,6 @@ cd baselines/Agentless
 
 set -e
 
-# make sure OPENAI_API_KEY is set
-if [ -z "$OPENAI_API_KEY" ]; then
-    echo "OPENAI_API_KEY is not set"
-    exit 1
-fi
-
 python agentless/fl/gold_localize.py --target_id "$INSTANCE_ID" \
   --output_folder "results/$OUTPUT_DIR/edit_location_individual" \
   --output_file "gold_loc_outputs.jsonl" \

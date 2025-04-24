@@ -23,12 +23,6 @@ cd ../../
 export PYTHONPATH=$PYTHONPATH:$(pwd)
 cd baselines/Agentless
 
-# make sure OPENAI_API_KEY is set
-if [ -z "$OPENAI_API_KEY" ]; then
-    echo "OPENAI_API_KEY is not set"
-    exit 1
-fi
-
 #%% Check each of the generated patches to see if any are bad
 cd ../../
 folder=baselines/Agentless/results/$OUTPUT_DIR/repair_sample

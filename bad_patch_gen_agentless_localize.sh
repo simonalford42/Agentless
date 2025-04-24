@@ -16,12 +16,6 @@ cd baselines/Agentless
 
 set -e
 
-# make sure OPENAI_API_KEY is set
-if [ -z "$OPENAI_API_KEY" ]; then
-    echo "OPENAI_API_KEY is not set"
-    exit 1
-fi
-
 #%% File-level localization
 python agentless/fl/localize.py --file_level \
                                 --output_folder results/$OUTPUT_DIR/file_level \
