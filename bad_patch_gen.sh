@@ -32,13 +32,13 @@ set -e
 
 python agentless/fl/gold_localize.py --target_id "$INSTANCE_ID" \
   --output_folder "results/$OUTPUT_DIR/edit_location_individual" \
-  --output_file "gold_loc_outputs.jsonl" \
+  --output_file "gold_loc_outputs$LOCALIZE_METHOD.jsonl" \
   --dataset codearena_local \
   $( [ "$LOCALIZE_METHOD" -eq 2 ] && echo --include_fn_name )
 echo "Localization done"
 
-python agentless/repair/repair.py --loc_file results/$OUTPUT_DIR/edit_location_individual/gold_loc_outputs.jsonl \
-                                --output_folder results/$OUTPUT_DIR/repair_sample \
+python agentless/repair/repair.py --loc_file results/$OUTPUT_DIR/edit_location_individual/gold_loc_outputs$LOCALIZE_METHOD.jsonl \
+                                --output_folder results/$OUTPUT_DIR/repair_sample$LOCALIZE_METHOD \
                                 --loc_interval \
                                 --top_n=3 \
                                 --context_window=10 \
@@ -55,32 +55,32 @@ echo "Repair done"
 
 set +e
 
-#%% Check each of the generated patches to see if any are bad
-cd ../../
-folder=baselines/Agentless/results/$OUTPUT_DIR/repair_sample
-for ((num=0; num<$SAMPLES; num++)); do
-    # check for empty patch; skip if empty
-    file="${folder}/output_${num}_processed.jsonl"
-    if grep -q '"model_patch"[[:space:]]*:[[:space:]]*""' "$file"; then
-        echo "Patch $num is empty string, skipping"
-    else
-        run_id="check_bad_patch_${OUTPUT_DIR}_${num}"
-        # run tests to see if it's a bad patch
-        python codearena.py --BugFixing \
-                            --predictions_path=$file \
-                            --instance_ids $INSTANCE_ID \
-                            --run_id=$run_id
+# #%% Check each of the generated patches to see if any are bad
+# cd ../../
+# folder=baselines/Agentless/results/$OUTPUT_DIR/repair_sample$LOCALIZE_METHOD
+# for ((num=0; num<$SAMPLES; num++)); do
+#     # check for empty patch; skip if empty
+#     file="${folder}/output_${num}_processed.jsonl"
+#     if grep -q '"model_patch"[[:space:]]*:[[:space:]]*""' "$file"; then
+#         echo "Patch $num is empty string, skipping"
+#     else
+#         run_id="check_bad_patch_${OUTPUT_DIR}_${LOCALIZE_METHOD}_${num}"
+#         # run tests to see if it's a bad patch
+#         python codearena.py --BugFixing \
+#                             --predictions_path=$file \
+#                             --instance_ids $INSTANCE_ID \
+#                             --run_id=$run_id
 
-        # if it's a bad patch, add it to the dataset. returns 0 if bad and added, or 1 otherwise
-        python bad_patch_validation.py --results_folder $run_id \
-                                       --instance_id $INSTANCE_ID
-        # once bad patch found, stop testing the samples
-        if [ $? -eq 0 ]; then
-            echo "Bad patch found for sample $num with localization method $LOCALIZE_METHOD"
-            exit 0
-        fi
-    fi
-done
+#         # if it's a bad patch, add it to the dataset. returns 0 if bad and added, or 1 otherwise
+#         python bad_patch_validation.py --results_folder $run_id \
+#                                        --instance_id $INSTANCE_ID
+#         # once bad patch found, stop testing the samples
+#         if [ $? -eq 0 ]; then
+#             echo "Bad patch found for sample $num with localization method $LOCALIZE_METHOD"
+#             exit 0
+#         fi
+#     fi
+# done
 
 # no bad patch found, exit 1
 exit 1

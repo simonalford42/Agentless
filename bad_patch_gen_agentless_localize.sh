@@ -5,7 +5,9 @@ RUN_ID=$3
 OUTPUT_DIR=${INSTANCE_ID}_n${SAMPLES}_$RUN_ID
 
 # MODEL='gpt-4.1-nano'
+# BACKEND='openai'
 MODEL='gemini-2.5-flash-preview-04-17'
+BACKEND='google'
 
 # add cd to path
 export PYTHONPATH=$PYTHONPATH:$(pwd)
@@ -103,7 +105,7 @@ echo "Finished running edit locations merge"
 #%% Repair for each set of edit locations
 for i in {0..3}; do
     python agentless/repair/repair.py --loc_file results/$OUTPUT_DIR/edit_location_individual/loc_merged_${i}-${i}_outputs.jsonl \
-                                    --output_folder results/$OUTPUT_DIR/repair_sample_$((i+1)) \
+                                    --output_folder results/$OUTPUT_DIR/repair_sample_agentless_localize_$((i+1)) \
                                     --loc_interval \
                                     --top_n=3 \
                                     --context_window=10 \
@@ -121,31 +123,31 @@ echo "Finished running repair for all edit locations"
 
 set +e
 
-#%% Check each of the generated patches to see if any are bad
-cd ../../
-for i in {1..4}; do
-    folder=baselines/Agentless/results/$OUTPUT_DIR/repair_sample_$i
-    for ((num=0; num<$SAMPLES; num++)); do
-        # check for empty patch; skip if empty
-        file="${folder}/output_${num}_processed.jsonl"
-        if grep -q '"model_patch"[[:space:]]*:[[:space:]]*""' "$file"; then
-            echo "Patch $num is empty string, skipping"
-        else
-            run_id="check_bad_patch_${OUTPUT_DIR}_${i}_${num}"
-            python codearena.py --BugFixing --predictions_path="${folder}/output_${num}_processed.jsonl" \
-                                --instance_ids $INSTANCE_ID \
-                                --run_id=$run_id
+# #%% Check each of the generated patches to see if any are bad
+# cd ../../
+# for i in {1..4}; do
+#     folder=baselines/Agentless/results/$OUTPUT_DIR/repair_sample_$i
+#     for ((num=0; num<$SAMPLES; num++)); do
+#         # check for empty patch; skip if empty
+#         file="${folder}/output_${num}_processed.jsonl"
+#         if grep -q '"model_patch"[[:space:]]*:[[:space:]]*""' "$file"; then
+#             echo "Patch $num is empty string, skipping"
+#         else
+#             run_id="check_bad_patch_${OUTPUT_DIR}_${i}_${num}"
+#             python codearena.py --BugFixing --predictions_path="${folder}/output_${num}_processed.jsonl" \
+#                                 --instance_ids $INSTANCE_ID \
+#                                 --run_id=$run_id
 
-            # if it's a bad patch, add it to the dataset. returns 0 if bad and added, or 1 otherwise
-            python bad_patch_validation.py --results_folder $run_id \
-                                           --instance_id $INSTANCE_ID
-            # once bad patch found, stop testing the samples
-            if [ $? -eq 0 ]; then
-                exit 0
-            fi
-        fi
-    done
-done
+#             # if it's a bad patch, add it to the dataset. returns 0 if bad and added, or 1 otherwise
+#             python bad_patch_validation.py --results_folder $run_id \
+#                                            --instance_id $INSTANCE_ID
+#             # once bad patch found, stop testing the samples
+#             if [ $? -eq 0 ]; then
+#                 exit 0
+#             fi
+#         fi
+#     done
+# done
 
 # no bad patch found, exit 1
 exit 1

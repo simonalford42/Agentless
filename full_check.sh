@@ -28,3 +28,4 @@ fi
 
 echo "No Bad patch found for task $INSTANCE_ID"
 exit 1
+
