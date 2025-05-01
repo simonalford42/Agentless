@@ -2,7 +2,9 @@
 TARGET_ID=ytdl-org__youtube-dl-31182
 SAMPLES=1
 OUTPUT_DIR="${TARGET_ID}_n${SAMPLES}"
-MODEL="gpt-4o-mini-2024-07-18"
+# MODEL="gpt-4o-mini-2024-07-18"
+MODEL='gemini-2.0-flash-lite'
+BACKEND='google' # 'openai', 'deepmind', etc.
 
 # add cd to path
 export PYTHONPATH=$PYTHONPATH:$(pwd)
@@ -14,19 +16,21 @@ cd baselines/Agentless
 # exit immediately if any of the commands fail
 set -e
 
-# make sure OPENAI_API_KEY is set
-if [ -z "$OPENAI_API_KEY" ]; then
-    echo "OPENAI_API_KEY is not set"
-    exit 1
-fi
+# # make sure OPENAI_API_KEY is set
+# if [ -z "$OPENAI_API_KEY" ]; then
+#     echo "OPENAI_API_KEY is not set"
+#     exit 1
+# fi
+
 
 #%% File-level localization
 python agentless/fl/localize.py --file_level \
                                 --output_folder results/$OUTPUT_DIR/file_level \
-                                --num_threads 10 \
+                                --num_threads 1 \
                                 --skip_existing \
                                 --target_id $TARGET_ID \
                                 --model $MODEL \
+                                --backend $BACKEND \
                                 --dataset codearena_local
 echo "Finished running file-level localization"
 
@@ -34,10 +38,11 @@ echo "Finished running file-level localization"
 python agentless/fl/localize.py --file_level \
                                 --irrelevant \
                                 --output_folder results/$OUTPUT_DIR/file_level_irrelevant \
-                                --num_threads 10 \
+                                --num_threads 1 \
                                 --skip_existing \
                                 --target_id $TARGET_ID \
                                 --model $MODEL \
+                                --backend $BACKEND \
                                 --dataset codearena_local
 echo "Finished running irrelevant file filtering"
 
@@ -47,8 +52,9 @@ python agentless/fl/retrieve.py --index_type simple \
                                 --filter_file results/$OUTPUT_DIR/file_level_irrelevant/loc_outputs.jsonl \
                                 --output_folder results/$OUTPUT_DIR/retrievel_embedding \
                                 --persist_dir embedding/swe-bench_simple \
-                                --num_threads 10 \
+                                --num_threads 1 \
                                 --target_id $TARGET_ID \
+                                --chunk_size 1024 \
                                 --dataset codearena_local
 echo "Finished running retrieval-based localization"
 
@@ -66,10 +72,11 @@ python agentless/fl/localize.py --related_level \
                                 --compress_assign \
                                 --compress \
                                 --start_file results/$OUTPUT_DIR/file_level_combined/combined_locs.jsonl \
-                                --num_threads 10 \
+                                --num_threads 1 \
                                 --skip_existing \
                                 --target_id $TARGET_ID \
                                 --model $MODEL \
+                                --backend $BACKEND \
                                 --dataset codearena_local
 echo "Finished running related elements localization"
 
@@ -81,10 +88,11 @@ python agentless/fl/localize.py --fine_grain_line_level \
                                 --temperature 0.8 \
                                 --num_samples 4 \
                                 --start_file results/$OUTPUT_DIR/related_elements/loc_outputs.jsonl \
-                                --num_threads 10 \
+                                --num_threads 1 \
                                 --skip_existing \
                                 --target_id $TARGET_ID \
                                 --model $MODEL \
+                                --backend $BACKEND \
                                 --dataset codearena_local
 echo "Finished running fine-grained line-level localization"
 
@@ -96,6 +104,7 @@ python agentless/fl/localize.py --merge \
                                 --start_file results/$OUTPUT_DIR/edit_location_samples/loc_outputs.jsonl \
                                 --target_id $TARGET_ID \
                                 --model $MODEL \
+                                --backend $BACKEND \
                                 --dataset codearena_local
 echo "Finished running edit locations merge"
 
@@ -113,6 +122,7 @@ for i in {0..3}; do
                                     --num_threads 2 \
                                     --target_id $TARGET_ID \
                                     --model $MODEL \
+                                    --backend $BACKEND \
                                     --dataset codearena_local
 done
 echo "Finished running repair for all edit locations"
@@ -130,6 +140,7 @@ python agentless/test/select_regression_tests.py --passing_tests results/$OUTPUT
                                                --target_id $TARGET_ID \
                                                --instance_ids $TARGET_ID \
                                                --model $MODEL \
+                                                --backend $BACKEND \
                                                --dataset codearena_local
 echo "Finished running regression test selection"
 
