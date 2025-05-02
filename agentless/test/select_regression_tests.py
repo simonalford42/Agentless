@@ -185,7 +185,7 @@ def main():
         "--backend",
         type=str,
         default="openai",
-        choices=["openai", "deepseek", "anthropic"],
+        choices=["openai", "deepseek", "anthropic", "google"],
     )
     parser.add_argument("--output_folder", type=str, required=True)
     parser.add_argument("--target_id", type=str)
