@@ -21,8 +21,8 @@ class LocalData(datasets.GeneratorBasedBuilder):
                 "hints_text": datasets.Value("string"),
                 "created_at": datasets.Value("string"),
                 "version": datasets.Value("string"),
-                "FAIL_TO_PASS": datasets.Value("string"),
-                "PASS_TO_PASS": datasets.Value("string"),
+                "FAIL_TO_PASS": datasets.Sequence(datasets.Value("string")),
+                "PASS_TO_PASS": datasets.Sequence(datasets.Value("string")),
                 "environment_setup_commit": datasets.Value("string"),
                 "bad_patch": datasets.Value("string"),
                 "bad_patch_author": datasets.Value("string"),
@@ -44,3 +44,4 @@ class LocalData(datasets.GeneratorBasedBuilder):
         # Yield examples using index as key
         for idx, record in enumerate(data):
             yield idx, record
+
