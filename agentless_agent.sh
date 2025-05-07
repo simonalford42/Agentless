@@ -1,5 +1,5 @@
 #%% Setup
-TARGET_ID=ytdl-org__youtube-dl-31182
+TARGET_ID=$1
 SAMPLES=1
 OUTPUT_DIR="${TARGET_ID}_n${SAMPLES}"
 # MODEL="gpt-4o-mini-2024-07-18"

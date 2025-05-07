@@ -8,6 +8,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any
 
 import docker
+from monkeypatched_swebench import swebench
 from swebench.harness.constants import (
     FAIL_TO_PASS,
     KEY_INSTANCE_ID,
