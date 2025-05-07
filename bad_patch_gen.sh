@@ -17,6 +17,9 @@ OUTPUT_DIR=${INSTANCE_ID}_n${SAMPLES}_$RUN_ID
 # MODEL='gemini-2.5-flash-preview-04-17'
 MODEL='gemini-2.0-flash-lite'
 BACKEND='google' # 'openai', 'deepmind', etc.
+# DATASET='codearena_local'
+DATASET='java_local'
+LANGUAGE='java'
 # MODEL='gpt-4.1-mini'
 # BACKEND='openai'
 
@@ -33,7 +36,7 @@ set -e
 python agentless/fl/gold_localize.py --target_id "$INSTANCE_ID" \
   --output_folder "results/$OUTPUT_DIR/edit_location_individual" \
   --output_file "gold_loc_outputs$LOCALIZE_METHOD.jsonl" \
-  --dataset codearena_local \
+  --dataset $DATASET \
   $( [ "$LOCALIZE_METHOD" -eq 2 ] && echo --include_fn_name )
 echo "Localization done"
 
@@ -50,7 +53,8 @@ python agentless/repair/repair.py --loc_file results/$OUTPUT_DIR/edit_location_i
                                 --target_id $INSTANCE_ID \
                                 --model $MODEL \
                                 --backend $BACKEND \
-                                --dataset codearena_local
+                                --dataset $DATASET \
+                                --language $LANGUAGE
 echo "Repair done"
 
 set +e

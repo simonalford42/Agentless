@@ -4,6 +4,7 @@ SAMPLES=1
 OUTPUT_DIR="${TARGET_ID}_n${SAMPLES}"
 # MODEL="gpt-4o-mini-2024-07-18"
 MODEL='gemini-2.0-flash-lite'
+# MODEL='gemini-2.5-flash-preview-4-17'
 BACKEND='google' # 'openai', 'deepmind', etc.
 
 # add cd to path

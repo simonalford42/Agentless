@@ -5,6 +5,9 @@ import json
 with open('../../data/codearena_instances.json', 'r') as f:
     data = json.load(f)
 
+with open('../../data/java_instances.json', 'r') as f:
+    java_data = json.load(f)
+
 class LocalData(datasets.GeneratorBasedBuilder):
     VERSION = datasets.Version("1.0.0")
 

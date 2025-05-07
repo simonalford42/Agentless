@@ -6,8 +6,10 @@ OUTPUT_DIR=${INSTANCE_ID}_n${SAMPLES}_$RUN_ID
 
 # MODEL='gpt-4.1-nano'
 # BACKEND='openai'
-MODEL='gemini-2.5-flash-preview-04-17'
+# MODEL='gemini-2.5-flash-preview-04-17'
+MODEL='gemini-2.0-flash-lite'
 BACKEND='google'
+DATASET='codearena_local'
 
 # add cd to path
 export PYTHONPATH=$PYTHONPATH:$(pwd)
@@ -26,7 +28,7 @@ python agentless/fl/localize.py --file_level \
                                 --target_id $INSTANCE_ID \
                                 --model $MODEL \
                                 --backend $BACKEND \
-                                --dataset codearena_local
+                                --dataset $DATASET
 echo "Finished running file-level localization"
 
 #%% Irrelevant file filtering
@@ -38,7 +40,7 @@ python agentless/fl/localize.py --file_level \
                                 --target_id $INSTANCE_ID \
                                 --model $MODEL \
                                 --backend $BACKEND \
-                                --dataset codearena_local
+                                --dataset $DATASET
 echo "Finished running irrelevant file filtering"
 
 #%% Retrieval-based localization
@@ -49,7 +51,7 @@ python agentless/fl/retrieve.py --index_type simple \
                                 --persist_dir embedding/swe-bench_simple \
                                 --num_threads 10 \
                                 --target_id $INSTANCE_ID \
-                                --dataset codearena_local
+                                --dataset $DATASET
 echo "Finished running retrieval-based localization"
 
 #%% Combine retrieval and model results
@@ -71,7 +73,7 @@ python agentless/fl/localize.py --related_level \
                                 --target_id $INSTANCE_ID \
                                 --model $MODEL \
                                 --backend $BACKEND \
-                                --dataset codearena_local
+                                --dataset $DATASET
 echo "Finished running related elements localization"
 
 #%% Fine-grained line-level localization
@@ -87,7 +89,7 @@ python agentless/fl/localize.py --fine_grain_line_level \
                                 --target_id $INSTANCE_ID \
                                 --model $MODEL \
                                 --backend $BACKEND \
-                                --dataset codearena_local
+                                --dataset $DATASET
 echo "Finished running fine-grained line-level localization"
 
 #%% Merge edit locations
@@ -99,7 +101,7 @@ python agentless/fl/localize.py --merge \
                                 --target_id $INSTANCE_ID \
                                 --model $MODEL \
                                 --backend $BACKEND \
-                                --dataset codearena_local
+                                --dataset $DATASET
 echo "Finished running edit locations merge"
 
 #%% Repair for each set of edit locations
@@ -117,7 +119,7 @@ for i in {0..3}; do
                                     --target_id $INSTANCE_ID \
                                     --model $MODEL \
                                     --backend $BACKEND \
-                                    --dataset codearena_local
+                                    --dataset $DATASET
 done
 echo "Finished running repair for all edit locations"
 

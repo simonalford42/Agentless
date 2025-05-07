@@ -4,7 +4,7 @@ import os
 from agentless.util.parse_global_var import parse_global_var_from_code
 from get_repo_structure.get_repo_structure import (
     get_project_structure_from_scratch,
-    parse_python_file,
+    parse_file,
 )
 
 
@@ -120,9 +120,10 @@ def transfer_arb_locs_to_locs(
     remove_line=False,
     file_content="",
     verbose=False,
+    language='python',
 ) -> tuple[list, list]:
     if structure is None:
-        class_info, function_names, file_lines = parse_python_file("", file_content)
+        class_info, function_names, file_lines = parse_file("", file_content, language=language)
         structure = {}
         structure[pred_file] = {
             "classes": class_info,
@@ -269,6 +270,7 @@ def transfer_arb_locs_to_locs(
                 if loc.strip():
                     unrecognized_locs.append(loc)
                 # assert False
+
 
     # Fine-grained-only loc: Remove intervals that are supersets of another.
     if fine_grain_only:
@@ -648,15 +650,14 @@ def get_full_file_paths_and_classes_and_functions(structure, current_path=""):
 PROJECT_FILE_LOC = os.environ.get("PROJECT_FILE_LOC", None)
 
 
-def get_repo_structure(instance_id: str, repo_name, base_commit, playground):
-
+def get_repo_structure(instance_id: str, repo_name, base_commit, playground, language="python"):
     if PROJECT_FILE_LOC is not None:
         with open(PROJECT_FILE_LOC + "/" + instance_id + ".json") as f:
             d = json.load(f)
         repo_structure = d["structure"]
     else:
         d = get_project_structure_from_scratch(
-            repo_name, base_commit, instance_id, playground
+            repo_name, base_commit, instance_id, playground, language
         )
         repo_structure = d["structure"]
 

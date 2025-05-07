@@ -58,9 +58,8 @@ def clone_repo(repo_name, repo_playground):
 
 
 def get_project_structure_from_scratch(
-    repo_name, commit_id, instance_id, repo_playground
+    repo_name, commit_id, instance_id, repo_playground, language='python',
 ):
-
     # Generate a temperary folder and add uuid to avoid collision
     repo_playground = os.path.join(repo_playground, str(uuid.uuid4()))
 
@@ -72,7 +71,7 @@ def get_project_structure_from_scratch(
 
     clone_repo(repo_name, repo_playground)
     checkout_commit(f"{repo_playground}/{get_repo_folder(repo_name)}", commit_id)
-    structure = create_structure(f"{repo_playground}/{get_repo_folder(repo_name)}")
+    structure = create_structure(f"{repo_playground}/{get_repo_folder(repo_name)}", language)
     # clean up
     subprocess.run(
         ["rm", "-rf", f"{repo_playground}/{get_repo_folder(repo_name)}"], check=True
@@ -86,7 +85,32 @@ def get_project_structure_from_scratch(
     return d
 
 
+def parse_java_file(file_path, file_content=None):
+    """Parse a Java file. Currently only file content is supported.
+    :param file_path: Path to the Python file.
+    :return: Class names, function names, and file contents
+    """
+    if file_content is None:
+        try:
+            with open(file_path, "r") as file:
+                file_content = file.read()
+        except Exception as e:  # Catch all types of exceptions
+            print(f"Error in java file {file_path}: {e}")
+            return [], [], ""
+
+    return [], [], file_content.splitlines()
+
+def parse_file(file_path, file_content=None, language='python'):
+    if language == 'python':
+        return parse_python_file(file_path, file_content)
+    elif language == 'java':
+        return parse_java_file(file_path, file_content)
+    else:
+        raise ValueError(f"Unsupported language: {language}")
+
+
 def parse_python_file(file_path, file_content=None):
+    assert 0, 'should not be called'
     """Parse a Python file to extract class and function definitions with their line numbers.
     :param file_path: Path to the Python file.
     :return: Class names, function names, and file contents
@@ -155,7 +179,7 @@ def parse_python_file(file_path, file_content=None):
     return class_info, function_names, file_content.splitlines()
 
 
-def create_structure(directory_path):
+def create_structure(directory_path, language='python'):
     """Create the structure of the repository directory by parsing Python files.
     :param directory_path: Path to the repository directory.
     :return: A dictionary representing the structure.
@@ -173,9 +197,17 @@ def create_structure(directory_path):
                 curr_struct[part] = {}
             curr_struct = curr_struct[part]
         for file_name in files:
-            if file_name.endswith(".py"):
+            if language == 'python' and file_name.endswith(".py"):
                 file_path = os.path.join(root, file_name)
                 class_info, function_names, file_lines = parse_python_file(file_path)
+                curr_struct[file_name] = {
+                    "classes": class_info,
+                    "functions": function_names,
+                    "text": file_lines,
+                }
+            elif language == 'java' and file_name.endswith('.java'):
+                file_path = os.path.join(root, file_name)
+                class_info, function_names, file_lines = parse_java_file(file_path)
                 curr_struct[file_name] = {
                     "classes": class_info,
                     "functions": function_names,

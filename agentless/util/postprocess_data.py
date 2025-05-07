@@ -480,6 +480,16 @@ def extract_python_blocks(text):
     return matches
 
 
+def extract_java_blocks(text):
+    # Regular expression pattern to match ```java\n{text}\n```
+    pattern = r"```java\n(.*?)\n```"
+
+    # Use re.findall to find all matches
+    matches = re.findall(pattern, text, re.DOTALL)
+
+    return matches
+
+
 def extract_code_blocks(text):
     pattern = r"```\n(.*?)\n```"
     matches = re.findall(pattern, text, re.DOTALL)
@@ -697,9 +707,6 @@ def parse_str_replace_edit_commands(
             + context_segment
             + "\n".join(content.splitlines()[end:])
         )
-
-    if not replaced:
-        print("not replaced")
 
     return content
 

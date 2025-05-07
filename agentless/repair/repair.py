@@ -14,6 +14,7 @@ from agentless.util.postprocess_data import (
     check_code_differ_by_just_empty_lines,
     check_syntax,
     extract_python_blocks,
+    extract_java_blocks,
     fake_git_repo,
     lint_code,
     parse_diff_edit_commands,
@@ -128,7 +129,7 @@ from flask import Flask
 ```
 
 Please note that the *SEARCH/REPLACE* edit REQUIRES PROPER INDENTATION. If you would like to add the line '        print(x)', you must fully write that out, with all those spaces before the code!
-Wrap the *SEARCH/REPLACE* edit in blocks ```python...```.
+Wrap the *SEARCH/REPLACE* edit in blocks ```python...``` (or ```java...```, etc. based on what language the edit is written in)
 """
 
 repair_prompt_combine_topn_cot_str_replace = """
@@ -155,9 +156,13 @@ def _post_process_multifile_repair(
     file_loc_intervals: dict[str, list],
     diff_format=False,
     str_replace_format=False,
+    language='python',
 ) -> tuple[list[str], list[str]]:
     if not str_replace_format:
-        edit_multifile_commands = extract_python_blocks(raw_output)
+        if language == 'python':
+            edit_multifile_commands = extract_python_blocks(raw_output)
+        else:
+            edit_multifile_commands = extract_java_blocks(raw_output)
     else:
         edit_multifile_commands = raw_output
     edited_files = []
@@ -221,7 +226,6 @@ def _post_process_multifile_repair(
 
         logger.info(f"extracted patch:")
         logger.info("\n".join(diff))
-        print("\n".join(diff))
 
     return edited_files, new_contents
 
@@ -251,6 +255,7 @@ def construct_topn_file_context(
         except KeyError:
             # maybe the gold patch created a new file that didn't exist
             continue
+
         line_locs, context_intervals = transfer_arb_locs_to_locs(
             locs,
             structure,
@@ -322,7 +327,7 @@ def process_loc(loc, args, swe_bench_data, prev_o, write_lock=None):
     bench_data = [x for x in swe_bench_data if x["instance_id"] == instance_id][0]
     problem_statement = bench_data["problem_statement"]
     structure = get_repo_structure(
-        instance_id, bench_data["repo"], bench_data["base_commit"], "playground"
+        instance_id, bench_data["repo"], bench_data["base_commit"], "playground", args.language
     )
     files, _, _ = get_full_file_paths_and_classes_and_functions(structure)
     raw_outputs, counts, all_generations, traj, prev_contents, file_names = (
@@ -486,7 +491,7 @@ def process_loc(loc, args, swe_bench_data, prev_o, write_lock=None):
 
     count = 0
     while count < args.max_samples:
-        print(f"trying the {count + 1}-th sample ...")
+        # print(f"trying the {count + 1}-th sample ...")
         ret = sample_responses[count]
         count += 1
         traj.append({**ret, "prompt": message})
@@ -504,6 +509,7 @@ def process_loc(loc, args, swe_bench_data, prev_o, write_lock=None):
             file_loc_intervals,
             diff_format=args.diff_format,
             str_replace_format=args.str_replace_format,
+            language=args.language,
         )
 
         if len(new_contents) == 0:
@@ -586,6 +592,7 @@ def post_process_raw_output(
             file_loc_intervals,
             diff_format=args.diff_format,
             str_replace_format=args.str_replace_format,
+            language=args.language,
         )
 
         contents = [file_contents[edited_file] for edited_file in edited_files]
@@ -594,7 +601,11 @@ def post_process_raw_output(
 
         raw_git_diffs += "\n" + git_diff.replace("\ No newline at end of file\n", "")
 
-        syntax_success = check_syntax(new_contents)
+        if args.language == 'python':
+            syntax_success = check_syntax(new_contents)
+        else:
+            # no syntax checking for java
+            syntax_success = True
 
         differ_by_empty_lines = check_code_differ_by_just_empty_lines(
             new_contents, contents
@@ -688,6 +699,7 @@ def post_process_repair(args):
                             args.context_window,
                             args.loc_interval,
                             args.fine_grain_loc_only,
+                            language=args.language,
                             file_content=file_contents[tmp_pred_file]
                             if tmp_pred_file in file_contents
                             else "",
@@ -771,6 +783,7 @@ def main():
     )
     parser.add_argument("--output_folder", type=str, required=True)
     parser.add_argument("--post_process", action="store_true")
+    parser.add_argument("--language", type=str, default='python', choices=['python', 'java'])
     parser.add_argument("--add_space", action="store_true")
     parser.add_argument("--cot", action="store_true")
     parser.add_argument("--fine_grain_loc_only", action="store_true")
