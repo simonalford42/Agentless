@@ -4,6 +4,10 @@ SAMPLES=$2
 RUN_ID=$3
 # 1 = line numbers, 2 = function names + line numbers, 3 = agentless localization
 LOCALIZE_METHOD=$4
+MODEL=$5
+BACKEND=$6
+DATASET=$7
+LANGUAGE=$8
 
 if [ "$LOCALIZE_METHOD" -eq 3 ]; then
     bash bad_patch_gen_agentless_localize.sh "$INSTANCE_ID" "$SAMPLES" "$RUN_ID"
@@ -15,11 +19,13 @@ OUTPUT_DIR=${INSTANCE_ID}_n${SAMPLES}_$RUN_ID
 # MODEL="gpt-4o-mini-2024-07-18"
 # MODEL='gpt-4.1-nano'
 # MODEL='gemini-2.5-flash-preview-04-17'
-MODEL='gemini-2.0-flash-lite'
-BACKEND='google' # 'openai', 'deepmind', etc.
+# MODEL='gemini-2.0-flash-lite'
+# MODEL='gemini-1.5-flash'
+# BACKEND='google' # 'openai', 'deepmind', etc.
 # DATASET='codearena_local'
-DATASET='java_local'
-LANGUAGE='java'
+# LANGUAGE='python'
+# DATASET='java_local'
+# LANGUAGE='java'
 # MODEL='gpt-4.1-mini'
 # BACKEND='openai'
 
@@ -54,37 +60,38 @@ python agentless/repair/repair.py --loc_file results/$OUTPUT_DIR/edit_location_i
                                 --model $MODEL \
                                 --backend $BACKEND \
                                 --dataset $DATASET \
-                                --language $LANGUAGE
+                                --language $LANGUAGE \
+                                --skip_greedy
 echo "Repair done"
 
 set +e
 
-# #%% Check each of the generated patches to see if any are bad
-# cd ../../
-# folder=baselines/Agentless/results/$OUTPUT_DIR/repair_sample$LOCALIZE_METHOD
-# for ((num=0; num<$SAMPLES; num++)); do
-#     # check for empty patch; skip if empty
-#     file="${folder}/output_${num}_processed.jsonl"
-#     if grep -q '"model_patch"[[:space:]]*:[[:space:]]*""' "$file"; then
-#         echo "Patch $num is empty string, skipping"
-#     else
-#         run_id="check_bad_patch_${OUTPUT_DIR}_${LOCALIZE_METHOD}_${num}"
-#         # run tests to see if it's a bad patch
-#         python codearena.py --BugFixing \
-#                             --predictions_path=$file \
-#                             --instance_ids $INSTANCE_ID \
-#                             --run_id=$run_id
+#%% Check each of the generated patches to see if any are bad
+cd ../../
+folder=baselines/Agentless/results/$OUTPUT_DIR/repair_sample$LOCALIZE_METHOD
+for ((num=0; num<$SAMPLES; num++)); do
+    # check for empty patch; skip if empty
+    file="${folder}/output_${num}_processed.jsonl"
+    if grep -q '"model_patch"[[:space:]]*:[[:space:]]*""' "$file"; then
+        echo "Patch $num is empty string, skipping"
+    else
+        run_id="check_bad_patch_${OUTPUT_DIR}_${LOCALIZE_METHOD}_${num}"
+        # run tests to see if it's a bad patch
+        python codearena.py --BugFixing \
+                            --predictions_path=$file \
+                            --instance_ids $INSTANCE_ID \
+                            --run_id=$run_id \
 
-#         # if it's a bad patch, add it to the dataset. returns 0 if bad and added, or 1 otherwise
-#         python bad_patch_validation.py --results_folder $run_id \
-#                                        --instance_id $INSTANCE_ID
-#         # once bad patch found, stop testing the samples
-#         if [ $? -eq 0 ]; then
-#             echo "Bad patch found for sample $num with localization method $LOCALIZE_METHOD"
-#             exit 0
-#         fi
-#     fi
-# done
+        # if it's a bad patch, add it to the dataset. returns 0 if bad and added, or 1 otherwise
+        python bad_patch_validation.py --results_folder $run_id \
+                                       --instance_id $INSTANCE_ID
+        # once bad patch found, stop testing the samples
+        if [ $? -eq 0 ]; then
+            echo "Bad patch found for sample $num with localization method $LOCALIZE_METHOD"
+            exit 0
+        fi
+    fi
+done
 
 # no bad patch found, exit 1
 exit 1
