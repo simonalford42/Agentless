@@ -618,7 +618,10 @@ def get_full_file_paths_and_classes_and_functions(structure, current_path=""):
                 functions.extend(sub_functions)
             else:
                 next_path = f"{current_path}/{name}" if current_path else name
-                files.append((next_path, content["text"]))
+                try:
+                    files.append((next_path, content["text"]))
+                except KeyError:
+                    continue
                 if "classes" in content:
                     for clazz in content["classes"]:
                         classes.append(

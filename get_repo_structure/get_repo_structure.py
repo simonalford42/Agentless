@@ -110,7 +110,6 @@ def parse_file(file_path, file_content=None, language='python'):
 
 
 def parse_python_file(file_path, file_content=None):
-    assert 0, 'should not be called'
     """Parse a Python file to extract class and function definitions with their line numbers.
     :param file_path: Path to the Python file.
     :return: Class names, function names, and file contents

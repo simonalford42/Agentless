@@ -94,7 +94,14 @@ def get_edit_locs(patch_text: str, include_fn_name: bool = False, one_file: bool
 
 def gold_localize(args):
     swe_bench_data = load_dataset(args.dataset, split="test")
-    task = [x for x in swe_bench_data if x["instance_id"] == args.target_id][0]
+    try:
+        task = [x for x in swe_bench_data if x["instance_id"] == args.target_id][0]
+    except IndexError:
+        print(f"Instance ID {args.target_id} not found in dataset {args.dataset}.")
+        print("Available instance IDs:")
+        for x in swe_bench_data:
+            print(f" - {x['instance_id']}")
+        return
     patch_text = task["patch"]
     changed_files = get_changed_files(patch_text)
     found_edit_locs = get_edit_locs(patch_text, include_fn_name=args.include_fn_name)
