@@ -7,6 +7,8 @@ with open('../../data/codearena_instances.json', 'r') as f:
 
 with open('../../data/java_instances.json', 'r') as f:
     java_data = json.load(f)
+    data.extend(java_data)
+    
 
 class LocalData(datasets.GeneratorBasedBuilder):
     VERSION = datasets.Version("1.0.0")
