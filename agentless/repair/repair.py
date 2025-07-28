@@ -93,6 +93,61 @@ Wrap the `edit_file` command in blocks ```python...```.
 """
 
 
+# repair_prompt_combine_topn_cot_diff = """
+# We are currently solving the following issue within our repository. Here is the issue text:
+# --- BEGIN ISSUE ---
+# {problem_statement}
+# --- END ISSUE ---
+
+# {repair_relevant_file_instruction}
+# --- BEGIN FILE ---
+# ```
+# {content}
+# ```
+# --- END FILE ---
+
+# Please first localize the bug based on the issue statement, and then generate *SEARCH/REPLACE* edits to fix the issue.
+
+# Every *SEARCH/REPLACE* edit must use this format:
+# 1. The file path
+# 2. The start of search block: <<<<<<< SEARCH
+# 3. A contiguous chunk of lines to search for in the existing source code
+# 4. The dividing line: =======
+# 5. The lines to replace into the source code
+# 6. The end of the replace block: >>>>>>> REPLACE
+
+# Here is an example:
+
+# ```python
+# ### mathweb/flask/app.py
+# <<<<<<< SEARCH
+# from flask import Flask
+# =======
+# import math
+# from flask import Flask
+# >>>>>>> REPLACE
+# ```
+
+# Please note that the *SEARCH/REPLACE* edit REQUIRES PROPER INDENTATION. If you would like to add the line '        print(x)', you must fully write that out, with all those spaces before the code!
+# Wrap the *SEARCH/REPLACE* edit in blocks ```python...``` (or ```java...```, etc. based on what language the edit is written in)
+# """
+
+# repair_prompt_combine_topn_cot_str_replace = """
+# We are currently solving the following issue within our repository. Here is the issue text:
+# --- BEGIN ISSUE ---
+# {problem_statement}
+# --- END ISSUE ---
+
+# {repair_relevant_file_instruction}
+# --- BEGIN FILE ---
+# ```
+# {content}
+# ```
+# --- END FILE ---
+
+# Please first localize the bug based on the issue statement, and then generate editing commands to fix the issue.
+# """
+
 repair_prompt_combine_topn_cot_diff = """
 We are currently solving the following issue within our repository. Here is the issue text:
 --- BEGIN ISSUE ---
@@ -118,17 +173,16 @@ Every *SEARCH/REPLACE* edit must use this format:
 
 Here is an example:
 
-```python
-### mathweb/flask/app.py
+```java
+### src/main/java/com/example/mathweb/controller/AppController.java
 <<<<<<< SEARCH
-from flask import Flask
+import org.springframework.web.bind.annotation.RestController;
 =======
-import math
-from flask import Flask
->>>>>>> REPLACE
-```
+import java.lang.Math;
+import org.springframework.web.bind.annotation.RestController;
+>>>>>>> REPLACE```
 
-Please note that the *SEARCH/REPLACE* edit REQUIRES PROPER INDENTATION. If you would like to add the line '        print(x)', you must fully write that out, with all those spaces before the code!
+Please note that the *SEARCH/REPLACE* edit REQUIRES PROPER INDENTATION. If you would like to add the line '        System.out.println(x)', you must fully write that out, with all those spaces before the code!
 Wrap the *SEARCH/REPLACE* edit in blocks ```python...``` (or ```java...```, etc. based on what language the edit is written in)
 """
 
@@ -162,6 +216,8 @@ def _post_process_multifile_repair(
         if language == 'python':
             edit_multifile_commands = extract_python_blocks(raw_output)
         else:
+            # print("Extracting Java blocks")
+            # print("$" * 20)
             edit_multifile_commands = extract_java_blocks(raw_output)
     else:
         edit_multifile_commands = raw_output
@@ -174,11 +230,14 @@ def _post_process_multifile_repair(
             str_replace_format=str_replace_format,
         )
     except Exception as e:
+        # logger("Here is a potential exception")
         logger.error(e)
         return edited_files, new_contents
 
+    # print("=== file_to_commands: ===")
     logger.info("=== file_to_commands: ===")
     logger.info(json.dumps(file_to_commands, indent=2))
+    # print(json.dumps(file_to_commands, indent=2))
 
     for edited_file_key in file_to_commands:
         edited_file = ""
@@ -203,11 +262,20 @@ def _post_process_multifile_repair(
             else:
                 new_content = parse_edit_commands(edit_commands, content)
         except Exception as e:
+            # print("There was an error at this here123")
+            # print("%" * 20)
             logger.error(e)
             edited_file = ""
             new_content = ""
 
+        
+
         if edited_file == "" or new_content == "":
+            # print("!" * 20)
+            # if edited_file != "":
+            #     print(f"edited_file: {edited_file} is empty")
+            # if new_content != "":
+            #     print(f"new_content: {new_content} is empty")
             continue
         edited_files.append(edited_file)
         logger.info(f"edited_file: {edited_file}")
@@ -552,6 +620,8 @@ def repair(args):
     locs = load_jsonl(args.loc_file)
     prev_o = load_jsonl(args.output_file) if os.path.exists(args.output_file) else []
 
+    print(f"Loaded {len(locs)} locations from {args.loc_file}")
+
     with open(f"{args.output_folder}/used_locs.jsonl", "w") as f:
         for loc in locs:
             f.write(json.dumps(loc) + "\n")
@@ -779,7 +849,7 @@ def main():
         "--backend",
         type=str,
         default="openai",
-        choices=["openai", "deepseek", "anthropic", "google"],
+        choices=["openai", "deepseek", "anthropic", "google", "openrouter", "groq"],
     )
     parser.add_argument("--output_folder", type=str, required=True)
     parser.add_argument("--post_process", action="store_true")

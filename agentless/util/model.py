@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from typing import List
 import os
 import google.generativeai as genai
+import openai
 
 from agentless.util.api_requests import (
     create_anthropic_config,
@@ -54,8 +55,9 @@ class OpenAIChatDecoder(DecoderBase):
     ) -> List[dict]:
         if self.temperature == 0:
             assert num_samples == 1
-        batch_size = min(self.batch_size, num_samples)
-
+        # batch_size = min(self.batch_size, num_samples)
+        batch_size = 1
+        
         config = create_chatgpt_config(
             message=message,
             max_tokens=self.max_new_tokens,
@@ -63,7 +65,9 @@ class OpenAIChatDecoder(DecoderBase):
             batch_size=batch_size,
             model=self.name,
         )
-        ret = request_chatgpt_engine(config, self.logger)
+        # ret = request_chatgpt_engine(config, self.logger, base_url="https://api.groq.com/openai/v1", key_env="GROQ_API_KEY")
+        ret = request_chatgpt_engine(config, self.logger, base_url="https://openrouter.ai/api/v1", key_env="OPENROUTER_API_KEY")
+        
         if ret:
             responses = [choice.message.content for choice in ret.choices]
             completion_tokens = ret.usage.completion_tokens
@@ -423,6 +427,136 @@ class GoogleChatDecoder(DecoderBase):
     def is_direct_completion(self) -> bool:
         return False
 
+# -----------------------------------------------------------------------------
+# Open Router
+# -----------------------------------------------------------------------------
+
+class OpenRouterChatDecoder(DecoderBase):
+    def __init__(self, name: str, logger, **kwargs) -> None:
+        super().__init__(name, logger, **kwargs)
+
+    def codegen(
+        self, message: str, num_samples: int = 1, prompt_cache: bool = False
+    ) -> List[dict]:
+        if self.temperature == 0:
+            assert num_samples == 1
+        # batch_size = min(self.batch_size, num_samples)
+        batch_size = 1
+        
+        config = create_chatgpt_config(
+            message=message,
+            max_tokens=self.max_new_tokens,
+            temperature=self.temperature,
+            batch_size=batch_size,
+            model=self.name,
+        )
+        trajs = []
+        for _ in range(num_samples):
+            # ret = request_chatgpt_engine(config, self.logger, base_url="https://api.groq.com/openai/v1", key_env="GROQ_API_KEY")
+            ret = request_chatgpt_engine(config, self.logger, base_url="https://openrouter.ai/api/v1", key_env="OPENROUTER_API_KEY")
+            
+            if ret:
+                responses = [choice.message.content for choice in ret.choices]
+                completion_tokens = ret.usage.completion_tokens
+                prompt_tokens = ret.usage.prompt_tokens
+            else:
+                responses = [""]
+                completion_tokens = 0
+                prompt_tokens = 0
+
+            # The nice thing is, when we generate multiple samples from the same input (message),
+            # the input tokens are only charged once according to openai API.
+            # Therefore, we assume the request cost is only counted for the first sample.
+            # More specifically, the `prompt_tokens` is for one input message,
+            # and the `completion_tokens` is the sum of all returned completions.
+            # Therefore, for the second and later samples, the cost is zero.
+            trajs.append({
+                    "response": responses[0],
+                    "usage": {
+                        "completion_tokens": completion_tokens,
+                        "prompt_tokens": prompt_tokens,
+                    },
+                })
+            # for response in responses[1:]:
+            #     trajs.append(
+            #         {
+            #             "response": response,
+            #             "usage": {
+            #                 "completion_tokens": 0,
+            #                 "prompt_tokens": 0,
+            #             },
+            #         }
+            #     )
+        return trajs
+    
+    def is_direct_completion(self) -> bool:
+        return False
+    
+# -----------------------------------------------------------------------------
+# Groq
+# -----------------------------------------------------------------------------
+
+class GroqChatDecoder(DecoderBase):
+    def __init__(self, name: str, logger, **kwargs) -> None:
+        super().__init__(name, logger, **kwargs)
+
+    def codegen(
+        self, message: str, num_samples: int = 1, prompt_cache: bool = False
+    ) -> List[dict]:
+        if self.temperature == 0:
+            assert num_samples == 1
+        # batch_size = min(self.batch_size, num_samples)
+        batch_size = 1
+        
+        config = create_chatgpt_config(
+            message=message,
+            max_tokens=self.max_new_tokens,
+            temperature=self.temperature,
+            batch_size=batch_size,
+            model=self.name,
+        )
+        trajs = []
+        for _ in range(num_samples):
+            ret = request_chatgpt_engine(config, self.logger, base_url="https://api.groq.com/openai/v1", key_env="GROQ_API_KEY")
+            # ret = request_chatgpt_engine(config, self.logger, base_url="https://openrouter.ai/api/v1", key_env="OPENROUTER_API_KEY")
+            
+            if ret:
+                responses = [choice.message.content for choice in ret.choices]
+                completion_tokens = ret.usage.completion_tokens
+                prompt_tokens = ret.usage.prompt_tokens
+            else:
+                responses = [""]
+                completion_tokens = 0
+                prompt_tokens = 0
+
+            # The nice thing is, when we generate multiple samples from the same input (message),
+            # the input tokens are only charged once according to openai API.
+            # Therefore, we assume the request cost is only counted for the first sample.
+            # More specifically, the `prompt_tokens` is for one input message,
+            # and the `completion_tokens` is the sum of all returned completions.
+            # Therefore, for the second and later samples, the cost is zero.
+            trajs.append({
+                    "response": responses[0],
+                    "usage": {
+                        "completion_tokens": completion_tokens,
+                        "prompt_tokens": prompt_tokens,
+                    },
+                })
+            # for response in responses[1:]:
+            #     trajs.append(
+            #         {
+            #             "response": response,
+            #             "usage": {
+            #                 "completion_tokens": 0,
+            #                 "prompt_tokens": 0,
+            #             },
+            #         }
+            #     )
+        return trajs
+
+    def is_direct_completion(self) -> bool:
+        return False
+
 
 def make_model(
     model: str,
@@ -458,6 +592,22 @@ def make_model(
         )
     elif backend == "google":
         return GoogleChatDecoder(
+            name=model,
+            logger=logger,
+            batch_size=batch_size,
+            max_new_tokens=max_tokens,
+            temperature=temperature,
+        )
+    elif backend == "openrouter":
+        return OpenRouterChatDecoder(
+            name=model,
+            logger=logger,
+            batch_size=batch_size,
+            max_new_tokens=max_tokens,
+            temperature=temperature,
+        )
+    elif backend == "groq":
+        return GroqChatDecoder(
             name=model,
             logger=logger,
             batch_size=batch_size,

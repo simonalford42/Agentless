@@ -483,9 +483,15 @@ def extract_python_blocks(text):
 def extract_java_blocks(text):
     # Regular expression pattern to match ```java\n{text}\n```
     pattern = r"```java\n(.*?)\n```"
+    # print("=" * 20)
+    # print(f"extract_java_blocks: {text}")
+    # print("=" * 20)
 
     # Use re.findall to find all matches
     matches = re.findall(pattern, text, re.DOTALL)
+    # print("=" * 20)
+    # print(f"extract_java_matches: {matches}")
+    # print("=" * 20)
 
     return matches
 

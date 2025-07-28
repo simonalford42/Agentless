@@ -94,6 +94,7 @@ for ((num=0; num<$SAMPLES; num++)); do
             python bad_patch_validation.py  --results_folder $run_id \
                                             --instance_id $INSTANCE_ID \
                                             --language $LANGUAGE \
+                                            --model $MODEL \
             # once bad patch found, stop testing the samples
             if [ $? -eq 0 ]; then
                 echo "Bad patch found for sample $num with localization method $LOCALIZE_METHOD"
@@ -107,8 +108,9 @@ for ((num=0; num<$SAMPLES; num++)); do
                                 --run_id=$run_id
 
             # if it's a bad patch, add it to the dataset. returns 0 if bad and added, or 1 otherwise
-            python bad_patch_validation.py --results_folder $run_id \
-                                        --instance_id $INSTANCE_ID
+            python bad_patch_validation.py  --results_folder $run_id \
+                                            --instance_id $INSTANCE_ID \
+                                            --model $MODEL \
             # once bad patch found, stop testing the samples
             if [ $? -eq 0 ]; then
                 echo "Bad patch found for sample $num with localization method $LOCALIZE_METHOD"

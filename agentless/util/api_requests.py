@@ -1,3 +1,4 @@
+import os
 import time
 from typing import Dict, Union
 
@@ -55,11 +56,15 @@ def handler(signum, frame):
     raise Exception("end of time")
 
 
-def request_chatgpt_engine(config, logger, base_url=None, max_retries=40, timeout=100):
+def request_chatgpt_engine(config, logger, base_url=None, max_retries=40, timeout=100, key_env="OPENAI_API_KEY"):
     ret = None
     retries = 0
 
-    client = openai.OpenAI(base_url=base_url)
+
+    client = openai.OpenAI(
+        base_url=base_url,
+        api_key=os.environ.get(key_env)
+    )
 
     while ret is None and retries < max_retries:
         try:
