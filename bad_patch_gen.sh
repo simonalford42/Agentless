@@ -8,6 +8,7 @@ MODEL=$5
 BACKEND=$6
 DATASET=$7
 LANGUAGE=$8
+DATAFILE=$9
 
 if [ "$LOCALIZE_METHOD" -eq 3 ]; then
     bash bad_patch_gen_agentless_localize.sh "$INSTANCE_ID" "$SAMPLES" "$RUN_ID"
@@ -89,16 +90,18 @@ for ((num=0; num<$SAMPLES; num++)); do
                                 --instance_ids $INSTANCE_ID_NEW \
                                 --run_id=$run_id \
                                 --mswe_phase 'all' \
+                                --use_apptainer True \
 
             # if it's a bad patch, add it to the dataset. returns 0 if bad and added, or 1 otherwise
             python bad_patch_validation.py  --results_folder $run_id \
                                             --instance_id $INSTANCE_ID \
                                             --language $LANGUAGE \
                                             --model $MODEL \
-            # once bad patch found, stop testing the samples
+                                            --dataset_name $DATAFILE \
+            # # once bad patch found, stop testing the samples
             if [ $? -eq 0 ]; then
                 echo "Bad patch found for sample $num with localization method $LOCALIZE_METHOD"
-                exit 0
+            #     exit 0
             fi
         else
             # run tests to see if it's a bad patch
@@ -114,7 +117,7 @@ for ((num=0; num<$SAMPLES; num++)); do
             # once bad patch found, stop testing the samples
             if [ $? -eq 0 ]; then
                 echo "Bad patch found for sample $num with localization method $LOCALIZE_METHOD"
-                exit 0
+                # exit 0
             fi
         fi
     fi

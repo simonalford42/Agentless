@@ -6,8 +6,9 @@ MODEL=${4:-'gemini-1.5-flash'}
 BACKEND=${5:-'google'}
 DATASET=${6:-'codearena_local'}
 LANGUAGE=${7:-'python'}
+DATAFILE=${8:-'data/multiswebench_data/mswebench_instances_copy.json'}
 
-echo $INSTANCE_ID $SAMPLES $RUN_ID $MODEL $BACKEND $DATASET $LANGUAGE
+echo $INSTANCE_ID $SAMPLES $RUN_ID $MODEL $BACKEND $DATASET $LANGUAGE $DATAFILE
 
 # # line level bad patch gen
 # bash bad_patch_gen.sh "$INSTANCE_ID" "$SAMPLES" "$RUN_ID" 1 "$MODEL" "$BACKEND" "$DATASET" "$LANGUAGE"
@@ -18,7 +19,7 @@ echo $INSTANCE_ID $SAMPLES $RUN_ID $MODEL $BACKEND $DATASET $LANGUAGE
 # fi
 
 echo "Trying function name localization"
-bash bad_patch_gen.sh "$INSTANCE_ID" "$SAMPLES" "$RUN_ID" 2 "$MODEL" "$BACKEND" "$DATASET" "$LANGUAGE"
+bash bad_patch_gen.sh "$INSTANCE_ID" "$SAMPLES" "$RUN_ID" 2 "$MODEL" "$BACKEND" "$DATASET" "$LANGUAGE" "$DATAFILE"
 
 # # if fn name worked, then stop
 # if [ $? -eq 0 ]; then
@@ -29,9 +30,9 @@ bash bad_patch_gen.sh "$INSTANCE_ID" "$SAMPLES" "$RUN_ID" 2 "$MODEL" "$BACKEND" 
 # echo "Trying agentless localization"
 # bash bad_patch_gen.sh "$INSTANCE_ID" 3 "$RUN_ID" 3
 
-# if [ $? -eq 0 ]; then
-#     exit 0
-# fi
+if [ $? -eq 0 ]; then
+    exit 0
+fi
 
-# echo "No Bad patch found for task $INSTANCE_ID"
-# exit 1
+echo "No Bad patch found for task $INSTANCE_ID"
+exit 1
