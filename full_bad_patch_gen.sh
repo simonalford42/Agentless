@@ -7,8 +7,9 @@ BACKEND=${5:-'google'}
 DATASET=${6:-'codearena_local'}
 LANGUAGE=${7:-'python'}
 DATAFILE=${8:-'data/multiswebench_data/mswebench_instances_copy.json'}
+USEAPPTAINER=${9:-'false'}
 
-echo $INSTANCE_ID $SAMPLES $RUN_ID $MODEL $BACKEND $DATASET $LANGUAGE $DATAFILE
+echo $INSTANCE_ID $SAMPLES $RUN_ID $MODEL $BACKEND $DATASET $LANGUAGE $DATAFILE $USEAPPTAINER
 
 # # line level bad patch gen
 # bash bad_patch_gen.sh "$INSTANCE_ID" "$SAMPLES" "$RUN_ID" 1 "$MODEL" "$BACKEND" "$DATASET" "$LANGUAGE"
@@ -18,8 +19,9 @@ echo $INSTANCE_ID $SAMPLES $RUN_ID $MODEL $BACKEND $DATASET $LANGUAGE $DATAFILE
 #     exit 0
 # fi
 
+
 echo "Trying function name localization"
-bash bad_patch_gen.sh "$INSTANCE_ID" "$SAMPLES" "$RUN_ID" 2 "$MODEL" "$BACKEND" "$DATASET" "$LANGUAGE" "$DATAFILE"
+bash bad_patch_gen.sh "$INSTANCE_ID" "$SAMPLES" "$RUN_ID" 2 "$MODEL" "$BACKEND" "$DATASET" "$LANGUAGE" "$DATAFILE" "$USEAPPTAINER"
 
 # # if fn name worked, then stop
 # if [ $? -eq 0 ]; then
