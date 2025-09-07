@@ -100,11 +100,28 @@ def parse_java_file(file_path, file_content=None):
 
     return [], [], file_content.splitlines()
 
+def parse_cpp_file(file_path, file_content=None):
+    """Parse a C++ file. Currently only file content is supported.
+    :param file_path: Path to the C++ file.
+    :return: Class names, function names, and file contents
+    """
+    if file_content is None:
+        try:
+            with open(file_path, "r") as file:
+                file_content = file.read()
+        except Exception as e:  # Catch all types of exceptions
+            print(f"Error in cpp file {file_path}: {e}")
+            return [], [], ""
+
+    return [], [], file_content.splitlines()
+
 def parse_file(file_path, file_content=None, language='python'):
     if language == 'python':
         return parse_python_file(file_path, file_content)
     elif language == 'java':
         return parse_java_file(file_path, file_content)
+    elif language == 'cpp':
+        return parse_cpp_file(file_path, file_content)
     else:
         raise ValueError(f"Unsupported language: {language}")
 
@@ -207,6 +224,14 @@ def create_structure(directory_path, language='python'):
             elif language == 'java' and file_name.endswith('.java'):
                 file_path = os.path.join(root, file_name)
                 class_info, function_names, file_lines = parse_java_file(file_path)
+                curr_struct[file_name] = {
+                    "classes": class_info,
+                    "functions": function_names,
+                    "text": file_lines,
+                }
+            elif language == 'cpp' and (file_name.endswith('.cpp') or file_name.endswith('.cc') or file_name.endswith('.cxx') or file_name.endswith('.h') or file_name.endswith('.hpp') or file_name.endswith('.c++') or file_name.endswith('.C')):
+                file_path = os.path.join(root, file_name)
+                class_info, function_names, file_lines = parse_cpp_file(file_path)
                 curr_struct[file_name] = {
                     "classes": class_info,
                     "functions": function_names,

@@ -5,7 +5,7 @@ import json
 with open('../../data/codearena_instances.json', 'r') as f:
     data = json.load(f)
 
-with open('../../data/java_instances.json', 'r') as f:
+with open('../../data/multiswebench_data/mswebench_instances.json', 'r') as f:
     java_data = json.load(f)
     data.extend(java_data)
     

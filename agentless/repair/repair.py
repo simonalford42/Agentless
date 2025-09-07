@@ -15,6 +15,7 @@ from agentless.util.postprocess_data import (
     check_syntax,
     extract_python_blocks,
     extract_java_blocks,
+    extract_cpp_blocks,
     fake_git_repo,
     lint_code,
     parse_diff_edit_commands,
@@ -129,7 +130,7 @@ from flask import Flask
 ```
 
 Please note that the *SEARCH/REPLACE* edit REQUIRES PROPER INDENTATION. If you would like to add the line '        print(x)', you must fully write that out, with all those spaces before the code!
-Wrap the *SEARCH/REPLACE* edit in blocks ```python...``` (or ```java...```, etc. based on what language the edit is written in)
+Wrap the *SEARCH/REPLACE* edit in blocks ```python...``` (or ```java...```, ```cpp...```, etc. based on what language the edit is written in)
 """
 
 repair_prompt_combine_topn_cot_str_replace = """
@@ -161,8 +162,10 @@ def _post_process_multifile_repair(
     if not str_replace_format:
         if language == 'python':
             edit_multifile_commands = extract_python_blocks(raw_output)
-        else:
+        elif language == 'java':
             edit_multifile_commands = extract_java_blocks(raw_output)
+        elif language == 'cpp':
+            edit_multifile_commands = extract_cpp_blocks(raw_output)
     else:
         edit_multifile_commands = raw_output
     edited_files = []
@@ -174,11 +177,14 @@ def _post_process_multifile_repair(
             str_replace_format=str_replace_format,
         )
     except Exception as e:
+        # logger("Here is a potential exception")
         logger.error(e)
         return edited_files, new_contents
 
+    # print("=== file_to_commands: ===")
     logger.info("=== file_to_commands: ===")
     logger.info(json.dumps(file_to_commands, indent=2))
+    # print(json.dumps(file_to_commands, indent=2))
 
     for edited_file_key in file_to_commands:
         edited_file = ""
@@ -203,11 +209,20 @@ def _post_process_multifile_repair(
             else:
                 new_content = parse_edit_commands(edit_commands, content)
         except Exception as e:
+            # print("There was an error at this here123")
+            # print("%" * 20)
             logger.error(e)
             edited_file = ""
             new_content = ""
 
+        
+
         if edited_file == "" or new_content == "":
+            # print("!" * 20)
+            # if edited_file != "":
+            #     print(f"edited_file: {edited_file} is empty")
+            # if new_content != "":
+            #     print(f"new_content: {new_content} is empty")
             continue
         edited_files.append(edited_file)
         logger.info(f"edited_file: {edited_file}")
@@ -370,7 +385,6 @@ def process_loc(loc, args, swe_bench_data, prev_o, write_lock=None):
         no_line_number=args.diff_format or args.str_replace_format,
         sticky_scroll=args.sticky_scroll,
     )
-
     if topn_content.strip() == "":
         if write_lock is not None:
             write_lock.acquire()
@@ -392,7 +406,6 @@ def process_loc(loc, args, swe_bench_data, prev_o, write_lock=None):
         if write_lock is not None:
             write_lock.release()
         return
-
     prompt_template = (
         repair_prompt_combine_topn_cot_str_replace
         if args.cot and args.str_replace_format
@@ -551,6 +564,8 @@ def repair(args):
     swe_bench_data = load_dataset(args.dataset, split="test")
     locs = load_jsonl(args.loc_file)
     prev_o = load_jsonl(args.output_file) if os.path.exists(args.output_file) else []
+
+    print(f"Loaded {len(locs)} locations from {args.loc_file}")
 
     with open(f"{args.output_folder}/used_locs.jsonl", "w") as f:
         for loc in locs:
@@ -779,11 +794,11 @@ def main():
         "--backend",
         type=str,
         default="openai",
-        choices=["openai", "deepseek", "anthropic", "google"],
+        choices=["openai", "deepseek", "anthropic", "google", "openrouter", "groq"],
     )
     parser.add_argument("--output_folder", type=str, required=True)
     parser.add_argument("--post_process", action="store_true")
-    parser.add_argument("--language", type=str, default='python', choices=['python', 'java'])
+    parser.add_argument("--language", type=str, default='python', choices=['python', 'java', 'cpp'])
     parser.add_argument("--add_space", action="store_true")
     parser.add_argument("--cot", action="store_true")
     parser.add_argument("--fine_grain_loc_only", action="store_true")
