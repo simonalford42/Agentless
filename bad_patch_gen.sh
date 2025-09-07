@@ -90,7 +90,7 @@ for ((num=0; num<$SAMPLES; num++)); do
         run_id="check_bad_patch_${OUTPUT_DIR}_${LOCALIZE_METHOD}_${num}"
 
         # if using java, we need to run the codearena.py script with a different instance id format
-        if [ "$LANGUAGE" == "java" ]; then
+        if [ "$LANGUAGE" == "java" ] || [ "$LANGUAGE" == "cpp" ]; then
             INSTANCE_ID_NEW=$(echo "$INSTANCE_ID" | sed -E 's/^([^_]*)__([^_]*)_(.*)$/\1\/\2:\3/')
 
             echo "running codearena.py with instance id $INSTANCE_ID_NEW, file $file, run_id $run_id, and localization method $LOCALIZE_METHOD"
@@ -108,7 +108,7 @@ for ((num=0; num<$SAMPLES; num++)); do
                                             --instance_id $INSTANCE_ID \
                                             --language $LANGUAGE \
                                             --model $MODEL \
-                                            --dataset_name "${DATAFILE}_${RUN_ID}.jsonl" \
+                                            --dataset_name $DATAFILE \
             # # once bad patch found, stop testing the samples
             if [ $? -eq 0 ]; then
                 echo "Bad patch found for sample $num with localization method $LOCALIZE_METHOD"

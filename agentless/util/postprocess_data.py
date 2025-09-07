@@ -495,6 +495,15 @@ def extract_java_blocks(text):
 
     return matches
 
+def extract_cpp_blocks(text):
+    # Regular expression pattern to match ```cpp\n{text}\n```
+    pattern = r"```cpp\n(.*?)\n```"
+
+    # Use re.findall to find all matches
+    matches = re.findall(pattern, text, re.DOTALL)
+
+    return matches
+
 
 def extract_code_blocks(text):
     pattern = r"```\n(.*?)\n```"
